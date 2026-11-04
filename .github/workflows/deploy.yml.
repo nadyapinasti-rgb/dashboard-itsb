@@ -1,9 +1,10 @@
 
 name: Deploy ITSB Dashboard to GitHub Pages
 
-on:
+"on":
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
