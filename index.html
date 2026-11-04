@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sosmed KPI Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+
+<style id="reference-dashboard-style">
+:root{box-sizing:border-box;--bg:#020d2b;--panel:#071b49;--tx:#f4f8ff;--mu:#9db7df;--shadow:0 8px 22px rgba(0,0,0,.24)}*,*:before,*:after{box-sizing:inherit}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#123b7b 0,#06183e 44%,#020b25 100%);color:var(--tx);font:13px/1.4 Inter,-apple-system,"Segoe UI",Arial,sans-serif}button,input,select{font:inherit}
+header{position:fixed;z-index:50;inset:0 0 auto;height:96px;padding:12px 22px;display:flex;align-items:center;gap:20px;background:linear-gradient(90deg,rgba(2,17,52,.94),rgba(8,47,99,.74) 50%,rgba(2,17,48,.94)),url('https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2000&q=85') center/cover;border-bottom:1px solid #1c5794;box-shadow:0 5px 22px #0007}header h1{font-size:23px;line-height:1;margin:0 0 5px;font-weight:850;letter-spacing:.5px}header .sub{color:#d2e4ff;font-size:10px}header .brand-mark{width:58px;height:58px;border-radius:50%;border:3px solid #d5f5d8;background:radial-gradient(circle,#e7f5dd 0 30%,#178d5b 31% 54%,#f4f4e5 55%);display:grid;place-items:center;color:#087247;font-size:24px}header .motto{margin:auto;color:#fff;font-family:Georgia,serif;font-style:italic;font-size:15px;text-align:center;text-shadow:0 2px 5px #001}header .search{margin-left:auto;width:220px;border:1px solid #4777a5;background:#031b40c9;border-radius:22px;padding:9px 14px;color:#d8eaff;font-size:11px}header .profile{display:flex;align-items:center;gap:8px;font-size:11px;color:#fff}header .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(145deg,#f3d1ae,#81513a);border:2px solid #dceeff}
+nav{position:fixed;z-index:40;left:0;top:96px;bottom:0;width:194px;padding:14px 9px;background:linear-gradient(180deg,#04163b,#03112f 70%,#061d42);border-right:1px solid #164579;overflow-y:auto}nav:before{content:"SOCIAL MEDIA\\A COMMAND CENTER";white-space:pre;display:block;padding:8px 12px 17px;color:#85c9ff;font-weight:800;font-size:11px;line-height:1.5;letter-spacing:1px}nav:after{content:"QUICK LINKS\\A Instagram  •  TikTok";white-space:pre;display:block;color:#82b9e8;font-size:10px;line-height:2;padding:18px 12px;margin-top:20px;border-top:1px solid #174477}nav button{width:100%;border:0;background:transparent;color:#d0e0f8;padding:10px 12px;margin:3px 0;border-radius:9px;cursor:pointer;text-align:left;font-weight:600;font-size:12px;display:flex;align-items:center;gap:10px}nav button:before{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:#ffffff0d;font-size:13px}nav button:nth-child(1):before{content:"⌂"}nav button:nth-child(2):before{content:"▦"}nav button:nth-child(3):before{content:"▤"}nav button:nth-child(4):before{content:"◉"}nav button:nth-child(5):before{content:"↗"}nav button:nth-child(6):before{content:"◎"}nav button:nth-child(7):before{content:"⚙"}nav button:hover{background:#1254a455;color:#fff}nav button.on{background:linear-gradient(100deg,#087cf2,#0754c8);color:#fff;box-shadow:0 5px 18px #087cf266}
+main{margin-left:194px;padding:108px 18px 30px;max-width:none;min-height:100vh}.card{background:linear-gradient(145deg,#09275bfa,#06183ff7);border:1px solid #15529a;border-radius:13px;padding:14px;margin-bottom:13px;box-shadow:var(--shadow);position:relative;overflow:hidden}.card:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,#238eff0b,transparent 50%);pointer-events:none}.card h2{font-size:13px;margin:0 0 10px;font-weight:750}.note{color:var(--mu);font-size:10px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.grow{flex:1}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:13px}.kpi{min-height:112px;padding:13px;border-radius:12px}.kpi b{font-size:25px;line-height:1.1;display:block;margin:7px 0 4px}.kpi:nth-child(1){border-color:#147fe8;background:linear-gradient(145deg,#07549b,#06234f)}.kpi:nth-child(2){border-color:#0baf8b;background:linear-gradient(145deg,#075c57,#06333f)}.kpi:nth-child(3){border-color:#a64df1;background:linear-gradient(145deg,#54228f,#251b5d)}.kpi:nth-child(4){border-color:#e99a21;background:linear-gradient(145deg,#81500d,#3f2b13)}.bar{height:5px;background:#061535;border-radius:8px;overflow:hidden;margin-top:7px;min-width:60px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#087bff,#24c9ff);border-radius:8px}
+.pill{padding:3px 8px;border-radius:999px;background:#132f59;color:#9ab4d8;font-size:10px;border:1px solid #6393cd33}.pill.t{background:#1fcd9220;color:#53e2b2;border-color:#1fcd9240}.pill.x{background:#ff4b6920;color:#ff8ca5;border-color:#ff4b6940}.pill.s{background:#ffae2f20;color:#ffc766;border-color:#ffae2f40}button.b,select,input{color:var(--tx);background:#071d45;border:1px solid #275687;border-radius:8px;padding:8px 10px;outline:none}button.b{cursor:pointer}button.b:hover{border-color:#3e83c6}button.p{background:linear-gradient(90deg,#087bf3,#1767da);border-color:#1686ff;color:#fff;font-weight:700}button.l{border:0;background:none;color:#5db3ff;cursor:pointer;padding:2px 6px;font:inherit}.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;align-items:end}.form label{display:flex;flex-direction:column;font-size:11px;color:var(--mu);gap:4px}.form input,.form select{width:100%}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:9px 8px;border-bottom:1px solid #446fa440;text-align:left;white-space:nowrap}th{color:#7894ba;font-weight:650;font-size:10px;text-transform:uppercase;letter-spacing:.4px}td.r,th.r{text-align:right}td.wrap{white-space:normal;min-width:160px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.cal .h{font-size:11px;color:#7794bb;text-align:center;padding:5px}.day{min-height:92px;background:#0a2144;border:1px solid #1e4678;border-radius:9px;padding:5px;cursor:pointer;overflow:hidden;font-size:11px}.day.o{background:#071a36;opacity:.5}.day.g .d{background:#22d7a026;color:#52e2b3}.day.r .d{background:#ff5b7f22;color:#ff8da7}.day .d{display:inline-block;min-width:21px;text-align:center;border-radius:6px;font-weight:700;padding:1px 4px;margin-bottom:3px}.day div.it{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 0;color:#b7c9e2}.day .n{display:none}.chartbox{position:relative;height:220px}.hide{display:none}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(250px,.9fr);gap:12px;align-items:stretch}.dashboard-grid>.card{margin-bottom:0}.dashboard-wide{grid-column:1/-1}.dash-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.dash-title h2{margin:0}.activity{display:flex;gap:9px;padding:10px 0;border-bottom:1px solid #446fa433;align-items:center}.activity:last-child{border-bottom:0}.activity .ico{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#168bff26;color:#53b6ff;font-size:15px;flex-shrink:0}.activity b{font-size:11px}.activity small{display:block;color:var(--mu);font-size:9px;margin-top:2px}.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.quick{border:1px solid #1e4b80;background:#0a2144;border-radius:10px;padding:12px 8px;color:#c7d7ec;cursor:pointer;text-align:center}.quick:hover{border-color:#2f85d8;background:#0d2a55}.quick strong{display:block;font-size:10px;margin-top:5px}.quick span{font-size:18px}.hero{background:linear-gradient(90deg,#073a79dd,#0a4d8acc),url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=85') center/cover;min-height:126px;display:flex;align-items:center;padding:20px 24px;border-color:#1f6db3}.hero h2{font-size:28px;margin:0 0 2px}.hero p{margin:0;color:#d1e5ff;font-size:12px}.hero .hero-badge{margin-left:auto;text-align:right;color:#a8ecff;font-size:10px;text-transform:uppercase;letter-spacing:1px}.ticker{height:42px;border:1px solid #23599c;border-radius:10px;background:linear-gradient(90deg,#112b67,#061a43);display:flex;align-items:center;gap:18px;padding:0 15px;margin-bottom:13px;overflow:hidden;white-space:nowrap;font-size:10px;color:#d7e8ff}.ticker b{background:linear-gradient(90deg,#713bff,#9b42ff);padding:8px 13px;border-radius:8px;font-size:11px}.ticker span{overflow:hidden;text-overflow:ellipsis}.welcome{display:flex;flex-direction:column;justify-content:center;min-height:126px;background:linear-gradient(140deg,#0c2b60,#07183d)}.welcome .date{color:#9bc9f3;font-size:10px}.welcome strong{font-size:18px}.welcome .leaf{font-size:24px;color:#38d8c0}
+.dashboard-grid>.hero{grid-column:1;grid-row:1}.dashboard-grid>.welcome{grid-column:2;grid-row:1}.dashboard-grid>.kpis{grid-column:1;grid-row:2}.dashboard-grid>.content-performance{grid-column:1;grid-row:3}.dashboard-grid>.recent-activity{grid-column:2;grid-row:2/ span 2}.dashboard-grid>.monthly-overview{grid-column:1;grid-row:4}.dashboard-grid>.quick-actions{grid-column:1;grid-row:5}.dashboard-grid>.followers-insights{grid-column:2;grid-row:4/ span 2}.dashboard-grid>.dashboard-wide{grid-column:1/-1;grid-row:6}
+@media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr 1fr}}@media(max-width:800px){.dashboard-grid>*{grid-column:auto!important;grid-row:auto!important}.dashboard-grid>.dashboard-wide{grid-column:1/-1!important}nav{width:170px}main{margin-left:170px;padding-left:12px;padding-right:12px}header .motto,header .search{display:none}.dashboard-grid{grid-template-columns:1fr}.hero .hero-badge{display:none}}@media(max-width:600px){header{height:74px;padding:9px 12px}header .brand-mark{width:42px;height:42px}header h1{font-size:18px}nav{top:74px;position:fixed;width:100%;height:48px;bottom:auto;display:flex;padding:4px;overflow-x:auto;border-right:0;border-bottom:1px solid #164579}nav:before,nav:after{display:none}nav button{width:auto;min-width:max-content;margin:0;padding:7px 9px}nav button:before{display:none}main{margin:0;padding:134px 10px 20px}.kpis{grid-template-columns:repeat(2,1fr)}.dashboard-grid{display:block}.dashboard-grid>.card{margin-bottom:12px}.hero{min-height:110px;padding:15px}.hero h2{font-size:22px}.cal{gap:2px}.day{min-height:64px}.day div.it{display:none}.day .n{display:block;font-size:10px;color:#718eb6}.chartbox{height:210px}}
+</style>
+</head>
+<body>
+<header><div class="brand-mark">✿</div><div><h1>ITSB SOCIAL MEDIA</h1><div class="sub" id="store">Marketing & Communication • Social Media Command Center</div></div><div class="motto">Growing Together<br>Building a Stronger Digital Presence</div><div class="search">⌕ &nbsp; Search content, platform, etc.</div><div class="profile"><div class="avatar"></div><div><b>Marketing Admin</b><br><span class="sub">ITSB</span></div></div><button id="logout" class="b" style="display:none;padding:7px 10px">Keluar</button></header>
+<div id="auth-gate" style="position:fixed;inset:0;z-index:9999;background:radial-gradient(circle at 50% 20%,#123b7b,#020b25 70%);display:flex;align-items:center;justify-content:center;padding:20px">
+ <form id="login-form" style="width:min(420px,100%);background:linear-gradient(145deg,#0b2550,#06152f);border:1px solid #2864a4;border-radius:18px;padding:28px;box-shadow:0 20px 60px #0008">
+  <div style="font-size:12px;color:#70c8ff;letter-spacing:1.5px;font-weight:800">ITSB • MARKETING</div><h2 style="margin:8px 0 4px;font-size:24px">Social Media Dashboard</h2><p style="color:#9db7df;font-size:12px;margin:0 0 20px">Masuk menggunakan akun tim yang telah diundang oleh administrator.</p>
+  <label style="display:block;color:#9db7df;font-size:11px;margin:12px 0 5px">Email</label><input id="login-email" type="email" autocomplete="username" required style="width:100%;padding:12px;background:#071d45;border:1px solid #275687;border-radius:8px;color:white">
+  <label style="display:block;color:#9db7df;font-size:11px;margin:12px 0 5px">Password</label><input id="login-password" type="password" autocomplete="current-password" required style="width:100%;padding:12px;background:#071d45;border:1px solid #275687;border-radius:8px;color:white">
+  <button type="submit" class="b p" style="width:100%;margin-top:18px;padding:11px">Masuk ke Dashboard</button><div id="login-message" style="font-size:11px;color:#ff9bad;margin-top:12px;min-height:16px"></div>
+  <div style="border-top:1px solid #24456e;margin-top:18px;padding-top:13px;color:#7898c1;font-size:10px">Akses khusus anggota tim marketing ITSB.</div>
+ </form>
+</div>
+<nav id="nav"></nav>
+<main id="main"></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<script>
+const PL=["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
+const ST=["Ide","Produksi","Review","Terjadwal","Tayang","Batal"];
+const FM=["Reels / Video Pendek","Feed / Carousel","Story","Video Panjang","Artikel / Teks","Live"];
+const MN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const PIL=[["Edukasi & Akademik",20],["PMB & Beasiswa",20],["Kehidupan Kampus",15],["Testimoni & Alumni",15],["Prestasi & Inovasi",10],["Karier & Industri",10],["Event & Kegiatan",5],["Hiburan & Tren",5]],PN=PIL.map(p=>p[0]);
+const PRODI0=["Informatika","Perencanaan Wilayah dan Kota (PWK)","Manajemen Bisnis Internasional (MBI)","Teknik Metalurgi dan Material","Teknik Perminyakan","Teknologi Pengolahan Pulp dan Kertas","Teknologi Pengolahan Sawit","Prodi 8 (isi nama)","Prodi 9 (isi nama)","Prodi 10 (isi nama)","Prodi 11 (isi nama)","Prodi 12 (isi nama)","Prodi 13 (isi nama)"];
+const SLOT=["Edukasi prodi","Info beasiswa prodi","Sharing session alumni","Sharing session mahasiswa","Testimoni mahasiswa","Testimoni alumni","Profil dosen","Fasilitas dan lab","Prospek karier","Prestasi dan kegiatan mahasiswa"];
+const TABS=[["dash","Dashboard"],["cal","Kalender"],["tracker","Tracker"],["insight","Insight"],["followers","Followers"],["prodi","Prodi"],["set","Pengaturan"]];
+const now=new Date();
+let S={settings:{year:now.getFullYear(),tp:2,tpub:2,tf:10000},tracker:[],insight:[],followers:[],prodi:[]};
+let tab="dash",cal={y:now.getFullYear(),m:now.getMonth()+1},edit=null,fsv="",charts=[],db=null,uid=null,q=Promise.resolve(),sb=null,workspaceId=null,realtimeChannel=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const n0=v=>Number(v||0).toLocaleString("id-ID");
+const pad=n=>String(n).padStart(2,"0");
+const ymd=(y,m,d)=>y+"-"+pad(m)+"-"+pad(d);
+const today=()=>ymd(now.getFullYear(),now.getMonth()+1,now.getDate());
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const dmy=s=>s?s.split("-").reverse().join("/"):"";
+const E={
+ tracker:{label:"Konten",f:[["title","Judul / ide konten","text"],["platform","Platform","sel",PL],["format","Format","sel",FM],["pillar","Pilar konten","sel",PN],["status","Status","sel",ST],["prod","Tgl selesai produksi","date"],["pub","Tgl tayang","date"],["pic","PIC","text"],["link","Link postingan","text"]],cols:["pub","platform","title","pillar","status","prod","pic"],sort:"pub"},
+ insight:{label:"Insight",f:[["date","Tgl ambil data","date"],["platform","Platform","sel",PL],["title","Judul / link konten","text"],["pub","Tgl tayang","date"],["views","Views / Reach","num"],["likes","Likes","num"],["comments","Komentar","num"],["shares","Share","num"],["saves","Saves","num"]],cols:["date","platform","title","views","likes","comments","shares","saves","er"],sort:"date"},
+ followers:{label:"Followers",f:[["date","Tanggal","date"]].concat(PL.map(p=>[p,p,"num"])),cols:["date"].concat(PL,["total"]),sort:"date"}
+};
+const LBL={er:"Eng. rate",total:"Total"};
+function lab(k,c){const f=E[k].f.find(x=>x[0]===c);return f?f[1]:LBL[c]||c}
+function cell(k,r,c){
+ if(c==="total")return n0(PL.reduce((a,p)=>a+(+r[p]||0),0));
+ if(c==="er")return r.views?((["likes","comments","shares","saves"].reduce((a,x)=>a+(+r[x]||0),0)/r.views*100).toFixed(1)+"%"):"";
+ const v=r[c];if(c==="status"){return `<span class="pill ${v==="Tayang"?"t":v==="Batal"?"x":v==="Terjadwal"?"s":""}">${esc(v)}</span>`}
+ if(["date","pub","prod"].includes(c))return dmy(v);
+ if(E[k].f.some(f=>f[0]===c&&f[2]==="num"))return n0(v);
+ return esc(v);
+}
+/* ---------- cloud storage: Supabase shared workspace ---------- */
+const DATA_KEYS=["settings","tracker","insight","followers","prodi"];
+function showLogin(message=""){
+ const gate=$("#auth-gate"); if(gate)gate.style.display="flex";
+ $("#main").style.display="none";$("#nav").style.display="none";
+ if(message)$("#login-message").textContent=message;
+}
+function showApp(){
+ $("#auth-gate").style.display="none";$("#main").style.display="";$("#nav").style.display="";
+ $("#logout").style.display="inline-block";
+}
+function setStoreStatus(message){const el=$("#store");if(el)el.textContent=message;}
+async function loadWorkspace(){
+ setStoreStatus("Mengambil data workspace…");
+ const {data:rows,error}=await sb.from("app_data").select("data_key,payload,updated_at").eq("workspace_id",workspaceId);
+ if(error)throw error;
+ const found=new Set();
+ for(const row of rows||[]){if(DATA_KEYS.includes(row.data_key)){S[row.data_key]=row.data_key==="settings"?Object.assign(S.settings,row.payload||{}):(row.payload??S[row.data_key]);found.add(row.data_key)}}
+ // One-time migration: if a key is not yet in cloud, bring over the current browser's localStorage copy.
+ for(const key of DATA_KEYS){
+  if(!found.has(key)){
+   const old=localStorage.getItem("sosmed_"+key);
+   if(old){try{const value=JSON.parse(old);if(key==="settings")S.settings=Object.assign(S.settings,value);else S[key]=value;await saveCloudKey(key,S[key]);}catch(e){console.warn("Legacy local data migration skipped",key,e)}}
+  }
+ }
+ cal.y=S.settings.year;
+ setStoreStatus("☁ Tersinkron ke workspace ITSB");
+ render();
+ if(realtimeChannel)await sb.removeChannel(realtimeChannel);
+ realtimeChannel=sb.channel("itsb-dashboard-"+workspaceId).on("postgres_changes",{event:"*",schema:"public",table:"app_data",filter:"workspace_id=eq."+workspaceId},payload=>{
+  const row=payload.new;if(!row||!DATA_KEYS.includes(row.data_key))return;
+  S[row.data_key]=row.data_key==="settings"?Object.assign(S.settings,row.payload||{}):(row.payload??S[row.data_key]);
+  cal.y=S.settings.year;setStoreStatus("☁ Data tim diperbarui");render();
+ }).subscribe();
+}
+async function saveCloudKey(key,value){
+ const {error}=await sb.from("app_data").upsert({workspace_id:workspaceId,data_key:key,payload:value,updated_at:new Date().toISOString()},{onConflict:"workspace_id,data_key"});
+ if(error)throw error;
+}
+function persist(k){
+ q=q.then(async()=>{
+  try{if(!sb||!uid)throw new Error("Sesi belum aktif. Silakan masuk kembali.");await saveCloudKey(k,S[k]);setStoreStatus("☁ Tersimpan ke cloud • "+new Date().toLocaleTimeString("id-ID"));}
+  catch(e){console.error(e);setStoreStatus("Gagal menyimpan ke cloud: "+(e.message||"periksa koneksi"));}
+ });
+}
+async function init(){
+ const cfg=window.ITSB_SUPABASE_CONFIG||{};
+ if(!cfg.url||!cfg.anonKey||!cfg.workspaceId||cfg.url.includes("YOUR-")||cfg.anonKey.includes("YOUR-")){
+  showLogin("Konfigurasi belum diisi. Admin perlu mengisi config.js terlebih dahulu.");return;
+ }
+ if(!window.supabase||!window.supabase.createClient){showLogin("Library Supabase gagal dimuat. Periksa koneksi internet.");return;}
+ workspaceId=cfg.workspaceId;sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ $("#login-form").addEventListener("submit",async e=>{
+  e.preventDefault();const email=$("#login-email").value.trim(),password=$("#login-password").value;
+  $("#login-message").textContent="Sedang masuk…";
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error)$("#login-message").textContent="Login gagal: "+error.message;
+ });
+ $("#logout").onclick=async()=>{if(realtimeChannel)await sb.removeChannel(realtimeChannel);await sb.auth.signOut();uid=null;showLogin("Kamu sudah keluar dari dashboard.");};
+ const {data:{session},error}=await sb.auth.getSession();
+ if(error){showLogin("Tidak dapat memeriksa sesi: "+error.message);return;}
+ if(!session){showLogin();return;}
+ uid=session.user.id;showApp();
+ try{const {data:membership,error:memberError}=await sb.from("workspace_members").select("role").eq("workspace_id",workspaceId).eq("user_id",uid).maybeSingle();if(memberError)throw memberError;if(!membership)throw new Error("Akun belum terdaftar sebagai anggota workspace.");window.ITSB_ROLE=membership.role;await loadWorkspace();}catch(e){console.error(e);setStoreStatus("Gagal memuat data cloud: "+(e.message||"periksa akses database"));showLogin("Akun berhasil login, tetapi belum memiliki akses ke workspace ITSB.");}
+ sb.auth.onAuthStateChange(async(event,session)=>{
+  if(event==="SIGNED_OUT"){uid=null;showLogin();}
+  else if(event==="SIGNED_IN"&&session&&session.user.id!==uid){uid=session.user.id;showApp();try{await loadWorkspace()}catch(e){showLogin("Akun belum terdaftar sebagai anggota workspace ITSB.")}}
+ });
+}
+/* ---------- tampilan ---------- */
+function nav(){$("#nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" class="${t[0]===tab?"on":""}">${t[1]}</button>`).join("")}
+$("#nav").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;edit=null;render()}};
+function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,tracker:()=>crud("tracker"),insight:()=>crud("insight"),followers:()=>crud("followers"),prodi,set:settings})[tab]()}
+function monthData(){
+ const y=S.settings.year,{tp,tpub}=S.settings,out=[];
+ for(let m=1;m<=12;m++){
+  const pre=y+"-"+pad(m),days=new Date(y,m,0).getDate();
+  const prod=S.tracker.filter(r=>(r.prod||"").startsWith(pre)).length;
+  const pub=S.tracker.filter(r=>r.status==="Tayang"&&(r.pub||"").startsWith(pre)).length;
+  const fl=S.followers.filter(r=>(r.date||"").startsWith(pre)).sort((a,b)=>a.date<b.date?-1:1).pop()||null;
+  out.push({m,tp:days*tp,tpub:days*tpub,prod,pub,fl});
+ }
+ return out;
+}
+function dash(){
+ const D=monthData(),{tf,year}=S.settings,sum=k=>D.reduce((a,d)=>a+d[k],0);
+ const last=PL.map(p=>{let v=null;D.forEach(d=>{if(d.fl&&d.fl[p]!==""&&d.fl[p]!=null)v=+d.fl[p]});return v});
+ const tot=last.some(v=>v!=null)?last.reduce((a,v)=>a+(v||0),0):0,prod=sum("prod"),pub=sum("pub"),prodTarget=sum("tp"),pubTarget=sum("tpub");
+ const recent=S.tracker.slice().sort((a,b)=>(b.pub||b.prod||"").localeCompare(a.pub||a.prod||"")).slice(0,6),ins=S.insight.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,4);
+ const stat=(label,value,target,icon)=>`<div class="card kpi"><span class="note">${icon} &nbsp;${label}</span><b>${n0(value)}</b><span class="note">${target?`${pct(value,target)}% dari target`:`Ringkasan periode berjalan`}</span><div class="bar"><i style="width:${target?Math.min(100,pct(value,target)):0}%"></i></div></div>`;
+ let h=`<div class="ticker"><b>✦ LATEST UPDATE</b><span>Social Media Performance • Kalender Konten • Insight & Followers</span><span class="pill t">LIVE</span><span>Kelola aktivitas digital ITSB dalam satu dashboard</span></div><div class="dashboard-grid">`;
+ h+=`<div class="card hero"><div><h2>ITSB</h2><p>Social Media Performance Dashboard</p><p style="margin-top:7px">Creative Content &nbsp; | &nbsp; Stronger Engagement &nbsp; | &nbsp; Digital Growth</p></div><div class="hero-badge">MARKETING<br><strong>COMMAND CENTER</strong></div></div>`;
+ h+=`<div class="card welcome"><div class="date">◷ &nbsp; ${new Date().toLocaleDateString("id-ID",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div><div style="margin-top:12px">Good day,</div><strong>Marketing Team</strong><div class="note">Institut Teknologi Sains Bandung</div><div class="leaf" style="margin-top:8px">✧ &nbsp; Together We Grow</div></div>`;
+ h+=`<div class="kpis">${stat("Konten Diproduksi",prod,prodTarget,"▣")}${stat("Konten Tayang",pub,pubTarget,"◉")}${stat("Total Followers",tot,tf*PL.length,"♧")}${stat("Data Insight",S.insight.length,0,"▤")}</div>`;
+ h+=`<div class="card content-performance"><div class="dash-title"><h2>Content Performance</h2><span class="note">${year}</span></div><div class="chartbox"><canvas id="c1"></canvas></div></div>`;
+ h+=`<div class="card recent-activity"><div class="dash-title"><h2>Recent Activity</h2><span class="note">View all →</span></div>`;
+ if(recent.length){recent.forEach((r,i)=>{h+=`<div class="activity"><div class="ico">${["✦","✓","◉","↗","▣","✎"][i%6]}</div><div class="grow"><b>${esc(r.title||"Konten tanpa judul")}</b><small>${esc(r.platform||"Platform")} • ${r.pub?dmy(r.pub):r.prod?dmy(r.prod):"Belum ada tanggal"}</small></div><span class="pill ${r.status==="Tayang"?"t":r.status==="Batal"?"x":"s"}">${esc(r.status||"Ide")}</span></div>`})}else h+=`<div class="note" style="padding:20px 0">Belum ada aktivitas. Tambahkan konten melalui menu Tracker.</div>`;
+ h+=`</div><div class="card monthly-overview"><div class="dash-title"><h2>Monthly Content Overview</h2><span class="note">${year}</span></div><div class="chartbox"><canvas id="c3"></canvas></div><div class="note">Perbandingan konten diproduksi dan ditayangkan</div></div>`;
+ h+=`<div class="card quick-actions"><div class="dash-title"><h2>Quick Actions</h2><span class="note">Shortcuts</span></div><div class="quick-grid"><button class="quick" data-go="tracker"><span>＋</span><strong>Tambah Konten</strong></button><button class="quick" data-go="cal"><span>▦</span><strong>Kalender Konten</strong></button><button class="quick" data-go="insight"><span>▤</span><strong>Input Insight</strong></button><button class="quick" data-go="followers"><span>♧</span><strong>Update Followers</strong></button><button class="quick" data-go="prodi"><span>⌂</span><strong>Konten Prodi</strong></button><button class="quick" data-go="set"><span>⚙</span><strong>Pengaturan</strong></button></div></div>`;
+ h+=`<div class="card followers-insights"><div class="dash-title"><h2>Followers Insights</h2><span class="note">By platform</span></div><div class="chartbox"><canvas id="c2"></canvas></div></div>`;
+ h+=`<div class="card dashboard-wide"><div class="dash-title"><h2>Latest Insight Data</h2><button class="l" data-go="insight">View all →</button></div>`;
+ if(ins.length){h+=`<div class="scroll"><table><tr><th>Tanggal</th><th>Platform</th><th>Konten</th><th class="r">Views / Reach</th><th class="r">Likes</th><th class="r">Comments</th><th class="r">Shares</th></tr>`;ins.forEach(r=>h+=`<tr><td>${dmy(r.date)}</td><td>${esc(r.platform)}</td><td>${esc(r.title)}</td><td class="r">${n0(r.views)}</td><td class="r">${n0(r.likes)}</td><td class="r">${n0(r.comments)}</td><td class="r">${n0(r.shares)}</td></tr>`);h+=`</table></div>`}else h+=`<div class="note" style="padding:16px 0">Belum ada data insight. Catat performa konten untuk melihat ringkasannya di sini.</div>`;
+ h+=`</div></div>`;$("#main").innerHTML=h;
+ document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{tab=b.dataset.go;edit=null;render()});if(!window.Chart)return;
+ const tx="#9db7df",gr="rgba(85,125,176,.16)",L=MN.map(m=>m.slice(0,3)),C=["#1c8cff","#22d6a0","#a85cff","#ffad2f","#ef4fc4"];
+ const opt={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tx,font:{size:10},boxWidth:9}}},scales:{x:{ticks:{color:tx,font:{size:9}},grid:{color:gr}},y:{ticks:{color:tx,font:{size:9}},grid:{color:gr},beginAtZero:true}}};
+ charts.push(new Chart($("#c1"),{type:"line",data:{labels:L,datasets:[{label:"Diproduksi",data:D.map(d=>d.prod),borderColor:"#1c9cff",backgroundColor:"#1c9cff22",fill:true,tension:.35,pointRadius:2},{label:"Ditayangkan",data:D.map(d=>d.pub),borderColor:"#21d6a0",backgroundColor:"#21d6a022",fill:true,tension:.35,pointRadius:2}]},options:opt}));
+ charts.push(new Chart($("#c2"),{type:"doughnut",data:{labels:PL,datasets:[{data:last.map(v=>v||0),backgroundColor:C,borderColor:"#07183f",borderWidth:3,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:tx,font:{size:9},boxWidth:8,padding:8}}},cutout:"62%"}}));
+ charts.push(new Chart($("#c3"),{type:"bar",data:{labels:L,datasets:[{label:"Diproduksi",data:D.map(d=>d.prod),backgroundColor:"#168bff",borderRadius:4},{label:"Ditayangkan",data:D.map(d=>d.pub),backgroundColor:"#a94dff",borderRadius:4}]},options:opt}));
+}
+function calendar(){
+ const {y,m}=cal,tg=S.settings.tpub,first=new Date(y,m-1,1),off=(first.getDay()+6)%7,dim=new Date(y,m,0).getDate();
+ let h=`<div class="card"><div class="row"><button class="b" id="pv">‹</button><b class="grow" style="text-align:center">${MN[m-1]} ${y}</b><button class="b" id="nx">›</button></div><div class="note" style="margin-bottom:8px">Hijau = target harian (${tg} konten) tercapai, merah muda = di bawah target sampai hari ini. Klik tanggal untuk menambah konten.</div><div class="cal">`;
+ ["Sen","Sel","Rab","Kam","Jum","Sab","Min"].forEach(d=>h+=`<div class="h">${d}</div>`);
+ for(let i=0;i<42;i++){
+  const dt=new Date(y,m-1,1-off+i),ds=ymd(dt.getFullYear(),dt.getMonth()+1,dt.getDate()),inm=dt.getMonth()===m-1;
+  const it=S.tracker.filter(r=>r.pub===ds),cl=!inm?"o":it.length>=tg?"g":ds<=today()?"r":"";
+  h+=`<div class="day ${cl}" data-d="${ds}"><span class="d">${dt.getDate()}</span>`+it.slice(0,3).map(r=>`<div class="it">${esc(r.platform)}: ${esc(r.title)}</div>`).join("")+(it.length>3?`<div class="note">+${it.length-3} lagi</div>`:"")+(it.length?`<span class="n">${it.length} konten</span>`:"")+`</div>`;
+ }
+ $("#main").innerHTML=h+"</div></div>";
+ $("#pv").onclick=()=>{cal.m--;if(cal.m<1){cal.m=12;cal.y--}render()};
+ $("#nx").onclick=()=>{cal.m++;if(cal.m>12){cal.m=1;cal.y++}render()};
+ document.querySelectorAll(".day").forEach(d=>d.onclick=()=>{tab="tracker";edit={k:"tracker",id:null,pre:{pub:d.dataset.d,status:"Terjadwal"}};render()});
+}
+function crud(k){
+ const c=E[k];let h="";
+ if(edit&&edit.k===k){
+  const r=edit.id?S[k].find(x=>x.id===edit.id):Object.assign({date:today()},edit.pre||{});
+  h+=`<div class="card"><h2>${edit.id?"Ubah":"Tambah"} ${c.label}</h2><div class="form">`+c.f.map(f=>{
+   const v=r[f[0]]==null?"":r[f[0]],id="f_"+f[0];
+   const inp=f[2]==="sel"?`<select id="${id}">${f[3].map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${f[2]==="num"?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':""} value="${esc(v)}">`;
+   return `<label>${f[1]}${inp}</label>`}).join("")+`</div><div class="row" style="margin-top:12px"><button class="b p" id="sv">Simpan</button><button class="b" id="cn">Batal</button></div></div>`;
+ }
+ h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (${S[k].length})</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+`<button class="b p" id="ad">+ Tambah</button></div><div class="scroll"><table><tr>`+c.cols.map(x=>`<th class="${["views","likes","comments","shares","saves","total","er"].concat(PL).includes(x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
+ const fs=k==="tracker"?fsv:"";
+ const rows=S[k].filter(r=>!fs||r.status===fs).slice().sort((a,b)=>(b[c.sort]||"")<(a[c.sort]||"")?-1:1);
+ rows.forEach(r=>h+=`<tr>`+c.cols.map(x=>`<td class="${["views","likes","comments","shares","saves","total","er"].concat(PL).includes(x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td><button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
+ if(!rows.length)h+=`<tr><td colspan="${c.cols.length+1}" class="note">Belum ada data. Klik “+ Tambah”.</td></tr>`;
+ $("#main").innerHTML=h+`</table></div></div>`;
+ $("#ad").onclick=()=>{edit={k,id:null};render()};
+ if($("#fs"))$("#fs").onchange=e=>{fsv=e.target.value;render()};
+ if($("#cn"))$("#cn").onclick=()=>{edit=null;render()};
+ if($("#sv"))$("#sv").onclick=()=>{
+  const r=edit.id?S[k].find(x=>x.id===edit.id):{id:Date.now().toString(36)+Math.random().toString(36).slice(2,5)};
+  c.f.forEach(f=>{const v=$("#f_"+f[0]).value;r[f[0]]=f[2]==="num"?(v===""?"":+v):v});
+  if(!edit.id)S[k].push(r);
+  persist(k);edit=null;render();
+ };
+ document.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>{edit={k,id:b.dataset.e};render();scrollTo(0,0)});
+ document.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{
+  if(b.textContent!=="Yakin?"){b.textContent="Yakin?";setTimeout(()=>{b.textContent="Hapus"},3000);return}
+  S[k]=S[k].filter(x=>x.id!==b.dataset.x);persist(k);render();
+ });
+}
+const ptg=p=>{const t=S.settings.pt;return t&&t[p[0]]!=null?+t[p[0]]:p[1]};
+function pil(){
+ const y=S.settings.year,rows=S.tracker.filter(r=>(r.prod||"").startsWith(y+"-")),tot=rows.length;
+ let h=`<div class="card"><h2>Pilar konten (diproduksi ${y})</h2><div class="scroll"><table><tr><th>Pilar</th><th class="r">Jumlah</th><th class="r">Aktual</th><th class="r">Target</th><th>Capaian</th></tr>`;
+ PIL.forEach(p=>{const n=rows.filter(r=>r.pillar===p[0]).length,a=pct(n,tot),t=ptg(p);h+=`<tr><td>${esc(p[0])}</td><td class="r">${n}</td><td class="r">${a}%</td><td class="r">${t}%</td><td style="min-width:140px"><div class="bar"><i style="width:${Math.min(100,pct(a,t))}%"></i></div></td></tr>`});
+ const nn=rows.filter(r=>!PN.includes(r.pillar)).length;
+ return h+`</table></div><p class="note">Aktual = porsi tiap pilar dari seluruh konten diproduksi (${tot}). Capaian = aktual dibanding target porsi.${nn?" "+nn+" konten belum diberi pilar (ubah di Tracker).":""}</p></div>`;
+}
+function pr(){if(!Array.isArray(S.prodi)||S.prodi.length!==PRODI0.length)S.prodi=PRODI0.map(n=>({n,s:SLOT.map(t=>({t,d:false}))}));return S.prodi}
+function prodi(){
+ const P=pr();let all=0;
+ const cards=P.map((p,pi)=>{const n=p.s.filter(x=>x.d).length;all+=n;return `<div class="card"><div class="row"><input class="grow" data-pn="${pi}" value="${esc(p.n)}" style="font-weight:700"><span class="pill ${n>=10?"t":""}">${n}/10</span></div><div class="bar" style="margin-bottom:8px"><i style="width:${n*10}%"></i></div>`+p.s.map((x,i)=>`<div class="row" style="margin-bottom:4px;flex-wrap:nowrap"><input type="checkbox" style="width:18px;height:18px;padding:0" data-c="${pi}.${i}" ${x.d?"checked":""}><input class="grow" data-t="${pi}.${i}" value="${esc(x.t)}"></div>`).join("")+`</div>`}).join("");
+ $("#main").innerHTML=`<div class="card kpi"><span class="note">Video prodi selesai</span><b>${all}/${P.length*10}</b><div class="bar"><i style="width:${pct(all,P.length*10)}%"></i></div><span class="note">Centang jika video sudah diproduksi. Nama prodi dan jenis video bisa diubah langsung.</span></div><div class="kpis" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">${cards}</div>`;
+ document.querySelectorAll("[data-c]").forEach(c=>c.onchange=()=>{const[a,b]=c.dataset.c.split(".");P[a].s[b].d=c.checked;persist("prodi");prodi()});
+ document.querySelectorAll("[data-t]").forEach(c=>c.onchange=()=>{const[a,b]=c.dataset.t.split(".");P[a].s[b].t=c.value;persist("prodi")});
+ document.querySelectorAll("[data-pn]").forEach(c=>c.onchange=()=>{P[+c.dataset.pn].n=c.value;persist("prodi")});
+}
+function settings(){
+ const s=S.settings;
+ $("#main").innerHTML=`<div class="card"><h2>Pengaturan KPI</h2><div class="form">
+ <label>Tahun dashboard<input id="s_year" type="number" value="${s.year}"></label>
+ <label>Target konten diproduksi per hari<input id="s_tp" type="number" min="0" value="${s.tp}"></label>
+ <label>Target konten ditayangkan per hari<input id="s_tpub" type="number" min="0" value="${s.tpub}"></label>
+ <label>Target followers per platform<input id="s_tf" type="number" min="0" value="${s.tf}"></label>${PIL.map((p,i)=>`<label>Target pilar ${esc(p[0])} (%)<input id="s_pt${i}" type="number" min="0" max="100" value="${ptg(p)}"></label>`).join("")}<p class="note" style="grid-column:1/-1">Target porsi pilar sebaiknya berjumlah 100%.</p></div>
+ <div class="row" style="margin-top:12px"><button class="b p" id="ss">Simpan</button></div>
+ <p class="note">Target bulanan dihitung otomatis dari target per hari dikali jumlah hari. Konten dihitung ditayangkan jika status Tayang dan tanggal tayang terisi.</p></div>
+ <div class="card"><h2>Cadangan data</h2><p class="note">Ekspor berkala sebagai cadangan, atau pulihkan dari file cadangan sebelumnya.</p>
+ <div class="row"><button class="b" id="ex">Ekspor cadangan (JSON)</button><input type="file" id="im" accept=".json"></div><div class="note" id="bk"></div></div>`;
+ $("#ss").onclick=()=>{["year","tp","tpub","tf"].forEach(x=>s[x]=+$("#s_"+x).value||0);s.pt={};PIL.forEach((p,i)=>{s.pt[p[0]]=+$("#s_pt"+i).value||0});persist("settings");cal.y=s.year;render()};
+ $("#ex").onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="cadangan-sosmed-"+today()+".json";a.click();URL.revokeObjectURL(url);$("#bk").textContent="Cadangan berhasil diunduh.";
+ };
+ $("#im").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const v=JSON.parse(r.result);["settings","tracker","insight","followers","prodi"].forEach(k=>{if(v[k]){S[k]=v[k];persist(k)}});$("#bk").textContent="Data berhasil dipulihkan."}catch(x){$("#bk").textContent="File cadangan tidak valid."}};r.readAsText(f)};
+}
+init();
+</script>
+</body>
+</html>
