@@ -54,3 +54,4 @@ values ('c4966757-b261-46af-846e-812b2412a75d', 'UUID_USER', 'owner'); -- owner 
 - Untuk penggunaan internal, batasi anggota lewat Supabase Auth + `workspace_members`; jangan mengandalkan repository privat sebagai pengamanan data aplikasi.
 - Saat ini data tiap modul disimpan sebagai satu dokumen JSON per workspace. Ini sesuai untuk dashboard tim kecil/menengah; jika kelak butuh audit trail, histori perubahan per baris, approval, atau data sangat besar, migrasikan ke tabel relasional.
 - Jangan jalankan dua versi dashboard berbeda untuk workspace yang sama sebelum memastikan skema datanya kompatibel.
+Deployment test ITSB Dashboard.
