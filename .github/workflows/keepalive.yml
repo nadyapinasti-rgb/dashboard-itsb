@@ -17,5 +17,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          curl -fsS "$SUPABASE_URL/rest/v1/app_data?select=data_key&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY"
+          # 401/403 = Supabase aktif tapi data dilindungi RLS (normal).
+          # Gagal hanya jika server tidak bisa dihubungi atau error 5xx (mis. project di-pause).
+          code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 \
+            "$SUPABASE_URL/rest/v1/app_data?select=data_key&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" || true)
+          echo "Supabase menjawab HTTP $code"
+          if [ "$code" = "000" ] || [ "$code" -ge 500 ]; then
+            echo "Supabase tidak bisa dihubungi atau sedang di-pause"; exit 1
+          fi
