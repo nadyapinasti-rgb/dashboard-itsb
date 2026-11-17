@@ -32,6 +32,8 @@ header .app-sub{color:#9fd0ff;font-size:10px;letter-spacing:.4px;margin-bottom:2
 header .search{width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Pencarian, tempat sampah & notifikasi */
+.qfbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;padding:8px 12px;border:1px solid #2864a4;border-radius:10px;background:#0a2a5a80;font-size:12px;color:#cfe3ff}
+tr.hl td{background:#1c8cff2e!important}tr.hl td:first-child{box-shadow:inset 3px 0 #1c9cff}
 header .search{display:flex;align-items:center;gap:6px;cursor:text}
 header .search input{all:unset;flex:1;min-width:0;color:#d8eaff;font-size:11px}
 header .search input::placeholder{color:#a9c4e8}
@@ -89,7 +91,7 @@ const TS=["Belum","Proses","Selesai"],TP=["Tinggi","Sedang","Rendah"];
 const PER_IG=["7 hari","14 hari","30 hari","90 hari","Kustom"],PER_TT=["7 hari","28 hari","60 hari","365 hari","Kustom"];
 const now=new Date();
 let S={settings:{year:now.getFullYear(),tp:2,tpub:2,tf:10000},tracker:[],insight:[],followers:[],prodi:[],todo:[],rep_ig:[],rep_tt:[],trash:[]};
-let fsv2={},lapSub="rep_ig",imp=null,flashMsg="";
+let fsv2={},lapSub="rep_ig",imp=null,flashMsg="",QF={},HL=null;
 let tab="dash",cal={y:now.getFullYear(),m:now.getMonth()+1},edit=null,fsv="",charts=[],db=null,uid=null,q=Promise.resolve(),sb=null,workspaceId=null,realtimeChannel=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -209,7 +211,7 @@ async function enterAppNow(session){
 }
 /* ---------- tampilan ---------- */
 function nav(){$("#nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" class="${t[0]===tab?"on":""}">${t[1]}</button>`).join("")}
-$("#nav").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;edit=null;render()}};
+$("#nav").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;edit=null;HL=null;QF={};render()}};
 function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,todo:()=>crud("todo"),tracker:()=>crud("tracker"),insight:()=>crud("insight"),lap:laporan,followers:followersTab,prodi,set:settings})[tab]()}
 function monthData(){
  const y=S.settings.year,{tp,tpub}=S.settings,out=[];
@@ -277,15 +279,18 @@ function crud(k,pre=""){
    const inp=f[2]==="sel"?`<select id="${id}">${f[3].map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${NUMT.includes(f[2])?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':f[2]==="dec"||f[2]==="usd"?'min="0" step="any" inputmode="decimal"':f[2]==="int"?'step="1"':""} value="${esc(v)}">`;
    return `<label>${f[1]}${inp}</label>`}).join("")+`</div><div class="row" style="margin-top:12px"><button class="b p" id="sv">Simpan</button><button class="b" id="cn">Batal</button></div></div>`;
  }
- h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (${S[k].length})</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"?`<button class="b" id="ipt">⇪ Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div><div class="scroll"><table><tr>`+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
+ h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (${S[k].length})</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"?`<button class="b" id="ipt">⇪ Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div>${QF[k]?`<div class="qfbar">🔍 Menampilkan hasil pencarian “${esc(QF[k])}” <button class="l" id="qf_x">✕ Tampilkan semua</button></div>`:""}<div class="scroll"><table><tr>`+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
  const fs=k==="tracker"?fsv:"",fs2=c.filt?fsv2[k]||"":"";
  let rows=S[k].filter(r=>(!fs||r.status===fs)&&(!fs2||r[c.filt[0]]===fs2)).slice().sort((a,b)=>(b[c.sort]||"")<(a[c.sort]||"")?-1:1);
  if(c.asc)rows=rows.reverse().sort((a,b)=>(a.status==="Selesai")-(b.status==="Selesai")||(!a.due)-(!b.due));
- rows.forEach(r=>h+=`<tr>`+c.cols.map(x=>`<td class="${isR(k,x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td style="white-space:nowrap">${k==="todo"&&r.status!=="Selesai"?`<button class="l" data-done="${r.id}">✓ Selesai</button>`:""}<button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
+ if(QF[k])rows=rows.filter(r=>rowHay(r).includes(QF[k]));
+ rows.forEach(r=>h+=`<tr${HL===r.id?' class="hl" id="hlrow"':""}>`+c.cols.map(x=>`<td class="${isR(k,x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td style="white-space:nowrap">${k==="todo"&&r.status!=="Selesai"?`<button class="l" data-done="${r.id}">✓ Selesai</button>`:""}<button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
  if(!rows.length)h+=`<tr><td colspan="${c.cols.length+1}" class="note">Belum ada data. Klik “+ Tambah”.</td></tr>`;
  $("#main").innerHTML=h+`</table></div></div>`;
  $("#ad").onclick=()=>{edit={k,id:null};render()};
  if($("#fs"))$("#fs").onchange=e=>{fsv=e.target.value;render()};
+ if($("#qf_x"))$("#qf_x").onclick=()=>{QF[k]="";HL=null;render()};
+ if($("#hlrow"))setTimeout(()=>{const e=$("#hlrow");if(e)e.scrollIntoView({block:"center",behavior:"smooth"})},50);
  if($("#fs2"))$("#fs2").onchange=e=>{fsv2[k]=e.target.value;render()};
  if($("#ipt"))$("#ipt").onclick=()=>{imp={k};edit=null;render()};
  document.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{const r=S[k].find(x=>x.id===b.dataset.done);if(r){r.status="Selesai";persist(k);render()}});
@@ -570,24 +575,25 @@ function bindTrash(){
  document.querySelectorAll("[data-pd]").forEach(b=>b.onclick=()=>{if(b.textContent!=="Yakin?"){b.textContent="Yakin?";setTimeout(()=>{b.textContent="Hapus permanen"},3000);return}S.trash=S.trash.filter(x=>x.tid!==b.dataset.pd);persist("trash");render()});
  if($("#tr_empty"))$("#tr_empty").onclick=e=>{const b=e.target;if(b.textContent!=="Yakin? Kosongkan"){b.textContent="Yakin? Kosongkan";setTimeout(()=>{b.textContent="Kosongkan"},3000);return}S.trash=[];persist("trash");render()};
 }
+function rowHay(r){return [r.title,r.pic,r.platform,r.pillar,r.status,r.note,r.link,r.format,r.per,dmy(r.pub),dmy(r.due),dmy(r.end),dmy(r.date)].filter(Boolean).join(" ").toLowerCase()}
 function searchAll(q){
  q=q.trim().toLowerCase();if(q.length<2)return [];
  const out=[];
  ["tracker","insight","todo","rep_ig","rep_tt"].forEach(k=>(S[k]||[]).forEach(r=>{
-  const hay=[r.title,r.pic,r.platform,r.pillar,r.status,r.note,r.link,r.format,r.per,dmy(r.pub),dmy(r.due),dmy(r.end),dmy(r.date)].filter(Boolean).join(" ").toLowerCase();
-  if(hay.includes(q))out.push({k,r});
+  if(rowHay(r).includes(q))out.push({k,r});
  }));
  return out.slice(0,30);
 }
+function goResult(x,q){if(!x)return;if(x.k.startsWith("rep_"))lapSub=x.k;tab=KTAB[x.k];imp=null;edit=null;QF[x.k]=q.trim().toLowerCase();HL=x.r.id;closeSearch();$("#q").blur();render()}
 function closeSearch(){const p=$("#sres");if(p)p.remove()}
 function openSearch(){
  const q=$("#q").value,R=searchAll(q);closeSearch();if(q.trim().length<2)return;
  const p=document.createElement("div");p.id="sres";
  p.innerHTML=R.length?R.map((x,i)=>{const r=x.r,d=r.pub||r.due||r.end||r.date;return `<button data-sr="${i}"><b>${esc(rowName(x.k,r))}</b><small>${esc(KLBL[x.k])}${r.platform?" • "+esc(r.platform):""}${d?" • "+dmy(d):""}${r.pic?" • "+esc(r.pic):""}</small></button>`}).join(""):`<div class="note" style="padding:12px">Tidak ditemukan “${esc(q)}”.</div>`;
  document.body.appendChild(p);
- p.querySelectorAll("[data-sr]").forEach(b=>b.onclick=()=>{const x=R[+b.dataset.sr];if(x.k.startsWith("rep_"))lapSub=x.k;tab=KTAB[x.k];imp=null;edit={k:x.k,id:x.r.id};closeSearch();$("#q").blur();render();scrollTo(0,0)});
+ p.querySelectorAll("[data-sr]").forEach(b=>b.onclick=()=>goResult(R[+b.dataset.sr],q));
 }
-(()=>{const q=$("#q");if(!q)return;let h;q.oninput=()=>{clearTimeout(h);h=setTimeout(openSearch,150)};q.onfocus=()=>{if(q.value)openSearch()};
+(()=>{const q=$("#q");if(!q)return;let h;q.oninput=()=>{clearTimeout(h);h=setTimeout(openSearch,150)};q.onfocus=()=>{if(q.value)openSearch()};q.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();const R=searchAll(q.value);if(R.length)goResult(R[0],q.value)}};
  document.addEventListener("click",e=>{if(!e.target.closest("#sres")&&!e.target.closest(".search"))closeSearch()});})();
 const ptg=p=>{const t=S.settings.pt;return t&&t[p[0]]!=null?+t[p[0]]:p[1]};
 function pil(){
