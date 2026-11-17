@@ -32,6 +32,12 @@ header .app-sub{color:#9fd0ff;font-size:10px;letter-spacing:.4px;margin-bottom:2
 header .search{width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 
+
+/* Mode viewer: sembunyikan semua aksi yang mengubah data */
+.ro #ad,.ro #ipt,.ro [data-e],.ro [data-x],.ro [data-done],.ro #sv,.ro #ss,.ro #im,.ro #tr_empty,.ro [data-rs],.ro [data-pd],.ro #fc_tg,.ro #i_go{display:none!important}
+.ro #main [data-c],.ro #main [data-t],.ro #main [data-pn],.ro #main #s_year,.ro #main #s_start,.ro #main #s_tp,.ro #main #s_tpub,.ro #main #s_tf,.ro #main [id^="s_pt"]{pointer-events:none;opacity:.75}
+.ro .day{cursor:default}
+.ro #main:before{content:"👁 Anda masuk sebagai Viewer: bisa melihat semua data, tetapi tidak bisa menambah, mengubah, atau menghapus.";display:block;margin-bottom:12px;padding:9px 13px;border:1px solid #2864a4;border-radius:10px;background:#0a2a5a80;color:#cfe3ff;font-size:12px}
 /* Kartu ringkasan yang bisa diklik */
 .kpi-click{cursor:pointer;transition:transform .15s,box-shadow .15s}.kpi-click:hover{transform:translateY(-2px);box-shadow:0 8px 24px #0008}.kpi-click.on{outline:2px solid #8fd0ff;outline-offset:1px}
 .kpi-more{float:right;font-size:9px;opacity:.75}
@@ -86,7 +92,7 @@ main{padding-top:124px}
 </div>
 <nav id="nav"></nav>
 <main id="main"></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
 <script src="./config.js"></script>
 <script>
 const PL=["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
@@ -179,6 +185,7 @@ async function saveCloudKey(key,value){
  if(error)throw error;
 }
 function persist(k){
+ if(isViewer()){setStoreStatus("👁 Mode lihat saja — perubahan tidak disimpan");return}
  q=q.then(async()=>{
   try{if(!sb||!uid)throw new Error("Sesi belum aktif. Silakan masuk kembali.");await saveCloudKey(k,S[k]);setStoreStatus("☁ Tersimpan ke cloud • "+new Date().toLocaleTimeString("id-ID"));}
   catch(e){console.error(e);setStoreStatus("Gagal menyimpan ke cloud: "+(e.message||"periksa koneksi"));}
@@ -217,12 +224,12 @@ async function enterApp(session){
 }
 async function enterAppNow(session){
  uid=session.user.id;showApp();
- try{const {data:membership,error:memberError}=await sb.from("workspace_members").select("role").eq("workspace_id",workspaceId).eq("user_id",uid).maybeSingle();if(memberError)throw memberError;if(!membership)throw new Error("Akun belum terdaftar sebagai anggota workspace.");window.ITSB_ROLE=membership.role;await loadWorkspace();$("#login-message").textContent="";}catch(e){console.error(e);setStoreStatus("Gagal memuat data cloud: "+(e.message||"periksa akses database"));showLogin("Akun berhasil login, tetapi belum memiliki akses ke workspace ITSB.");}
+ try{const {data:membership,error:memberError}=await sb.from("workspace_members").select("role").eq("workspace_id",workspaceId).eq("user_id",uid).maybeSingle();if(memberError)throw memberError;if(!membership)throw new Error("Akun belum terdaftar sebagai anggota workspace.");window.ITSB_ROLE=membership.role;applyRole(session);await loadWorkspace();$("#login-message").textContent="";}catch(e){console.error(e);setStoreStatus("Gagal memuat data cloud: "+(e.message||"periksa akses database"));showLogin("Akun berhasil login, tetapi belum memiliki akses ke workspace ITSB.");}
 }
 /* ---------- tampilan ---------- */
 function nav(){$("#nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" class="${t[0]===tab?"on":""}">${t[1]}</button>`).join("")}
 $("#nav").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;edit=null;HL=null;QF={};render()}};
-function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,todo:()=>crud("todo"),tracker:()=>crud("tracker"),insight:()=>crud("insight"),lap:laporan,followers:followersTab,prodi,set:settings})[tab]()}
+function render(){nav();if(isViewer())edit=null,imp=null;charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,todo:()=>crud("todo"),tracker:()=>crud("tracker"),insight:()=>crud("insight"),lap:laporan,followers:followersTab,prodi,set:settings})[tab]()}
 function monthData(){
  const y=S.settings.year,{tp,tpub}=S.settings,out=[];
  for(let m=1;m<=12;m++){
@@ -278,7 +285,7 @@ function calendar(){
  $("#main").innerHTML=h+"</div></div>";
  $("#pv").onclick=()=>{cal.m--;if(cal.m<1){cal.m=12;cal.y--}render()};
  $("#nx").onclick=()=>{cal.m++;if(cal.m>12){cal.m=1;cal.y++}render()};
- document.querySelectorAll(".day").forEach(d=>d.onclick=()=>{tab="tracker";edit={k:"tracker",id:null,pre:{pub:d.dataset.d,status:"Terjadwal"}};render()});
+ document.querySelectorAll(".day").forEach(d=>d.onclick=()=>{if(isViewer())return;tab="tracker";edit={k:"tracker",id:null,pre:{pub:d.dataset.d,status:"Terjadwal"}};render()});
 }
 function crud(k,pre=""){
  const c=E[k];let h=pre;
@@ -398,7 +405,9 @@ function impFormat(v,platform){
 }
 function loadXLSX(){
  if(window.XLSX)return Promise.resolve();
- return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";sc.onload=ok;sc.onerror=()=>no(new Error("Library Excel gagal dimuat. Periksa koneksi internet."));document.head.appendChild(sc)});
+ return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";sc.onload=ok;
+  sc.onerror=()=>{const f=document.createElement("script");f.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";f.onload=ok;f.onerror=()=>no(new Error("Library Excel gagal dimuat. Periksa koneksi internet."));document.head.appendChild(f)};
+  document.head.appendChild(sc)});
 }
 function impJson(obj){
  let best=null;const walk=(v,d)=>{if(d>8||v==null)return;if(Array.isArray(v)){const objs=v.filter(x=>x&&typeof x==="object"&&!Array.isArray(x));if(objs.length&&(!best||objs.length>best.length))best=objs;v.forEach(x=>walk(x,d+1))}else if(typeof v==="object")Object.values(v).forEach(x=>walk(x,d+1))};
@@ -565,6 +574,7 @@ function restoreTrash(tid,quiet){
  return true;
 }
 function undo(){
+ if(isViewer())return;
  const u=UNDO.pop();if(!u){toast("Tidak ada perubahan untuk dibatalkan.");return}
  if(u.type==="del"){const t=S.trash.find(x=>x.k===u.k&&x.row.id===u.id);if(t){restoreTrash(t.tid,true);toast("Penghapusan dibatalkan.")}}
  else if(u.type==="edit"){const i=S[u.k].findIndex(x=>x.id===u.before.id);if(i>=0){S[u.k][i]=u.before;persist(u.k);toast("Perubahan dibatalkan.")}}
@@ -644,6 +654,15 @@ function kpiDetail(k,{D,last,act,P}){
   return R.length?h:`<p class="note">Belum ada data insight.</p>`;
  }
  return "";
+}
+
+/* ---------- hak akses: viewer = lihat saja ---------- */
+const ROLE_LBL={owner:"Owner",editor:"Editor",viewer:"Viewer (lihat saja)"};
+function isViewer(){return window.ITSB_ROLE==="viewer"}
+function applyRole(session){
+ const r=window.ITSB_ROLE;document.body.classList.toggle("ro",r==="viewer");
+ const p=document.querySelector("header .profile>div:not(.avatar)");
+ if(p&&session&&session.user){const em=session.user.email||"";p.innerHTML=`<b>${esc(em.split("@")[0]||"Pengguna")}</b><br><span class="sub">${esc(ROLE_LBL[r]||r||"")}</span>`;p.title=em}
 }
 const ptg=p=>{const t=S.settings.pt;return t&&t[p[0]]!=null?+t[p[0]]:p[1]};
 function pil(){
