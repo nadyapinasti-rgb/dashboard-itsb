@@ -40,7 +40,7 @@ header .search{width:250px;white-space:nowrap;overflow:hidden;text-overflow:elli
 .ro #main:before{content:"👁 Anda masuk sebagai Viewer: bisa melihat semua data, tetapi tidak bisa menambah, mengubah, atau menghapus.";display:block;margin-bottom:12px;padding:9px 13px;border:1px solid #2864a4;border-radius:10px;background:#0a2a5a80;color:#cfe3ff;font-size:12px}
 /* Kartu ringkasan yang bisa diklik */
 .kpi-click{cursor:pointer;transition:transform .15s,box-shadow .15s}.kpi-click:hover{transform:translateY(-2px);box-shadow:0 8px 24px #0008}.kpi-click.on{outline:2px solid #8fd0ff;outline-offset:1px}
-.kpi-more{float:right;font-size:9px;opacity:.75}
+.kpi-click{position:relative}.kpi-more{position:absolute;top:10px;right:11px;font-size:11px;opacity:.8}.kpi-click>.note:first-child{padding-right:16px;display:block}
 .kpidetail{grid-column:1/-1;padding:14px 16px}
 .kpidetail table{width:100%}
 .kd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px;margin-top:6px}.kd-wide{grid-column:span 2;min-width:0}.kd-grid>div{min-width:0}@media(max-width:700px){.kd-wide{grid-column:auto}}
@@ -245,13 +245,13 @@ function dash(){
  const D=monthData(),{tf,year}=S.settings,sum=k=>D.reduce((a,d)=>a+d[k],0);
  const last=PL.map(p=>{let v=null;D.forEach(d=>{if(d.fl&&d.fl[p]!==""&&d.fl[p]!=null)v=+d.fl[p]});return v});
  const tot=last.some(v=>v!=null)?last.reduce((a,v)=>a+(v||0),0):0,prod=sum("prod"),pub=sum("pub");
- const P=kpiPeriod(),prodTarget=P.days*S.settings.tp,pubTarget=P.days*S.settings.tpub,act=PL.filter((p,i)=>last[i]!=null),folTarget=tf*act.length;
+ const P=kpiPeriod(),prodTarget=P.days*S.settings.tp,pubTarget=P.days*S.settings.tpub,act=PL.filter((p,i)=>last[i]!=null),folTarget=tf*act.length,FGr=act.map(p=>folGrowth(p,P.st)).filter(Boolean),folGain=FGr.reduce((a,g)=>a+g.gain,0);
  const recent=S.tracker.slice().sort((a,b)=>(b.pub||b.prod||"").localeCompare(a.pub||a.prod||"")).slice(0,6),ins=S.insight.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,4);
- const stat=(label,value,target,icon,key,tl)=>`<div class="card kpi kpi-click ${kpiOpen===key?"on":""}" data-kpi="${key}" role="button" tabindex="0" title="Klik untuk melihat detail"><span class="note">${icon} &nbsp;${label}<span class="kpi-more">${kpiOpen===key?"▲ tutup":"▼ detail"}</span></span><b>${n0(value)}</b><span class="note">${target?`${pct(value,target)}% dari target ${tl}`:`Ringkasan periode berjalan`}</span><div class="bar"><i style="width:${target?Math.min(100,pct(value,target)):0}%"></i></div></div>`;
+ const stat=(label,value,target,icon,key,tl)=>`<div class="card kpi kpi-click ${kpiOpen===key?"on":""}" data-kpi="${key}" role="button" tabindex="0" title="Klik untuk melihat detail"><span class="note">${icon} &nbsp;${label}<span class="kpi-more" title="${kpiOpen===key?"Tutup detail":"Lihat detail"}">${kpiOpen===key?"▴":"▾"}</span></span><b>${key==="fol"&&value>0?"+":""}${n0(value)}</b><span class="note">${target?`${pct(value,target)}% dari target ${tl}`:`Ringkasan periode berjalan`}</span><div class="bar"><i style="width:${target?Math.min(100,pct(value,target)):0}%"></i></div></div>`;
  let h=`<div class="ticker"><b>✦ LATEST UPDATE</b><span>Content Updates • Campaigns • Performance • Audience Insights</span><span class="pill t">LIVE</span><span>Kelola aktivitas digital ITSB dalam satu dashboard</span></div><div class="dashboard-grid">`;
  h+=`<div class="card hero"><div><h2>SOCIALSYNC</h2><p>Social Media Management Dashboard</p><p style="margin-top:7px">Plan. Manage. Analyze. Grow.</p></div><div class="hero-badge">MARKETING<br><strong>COMMAND CENTER</strong></div></div>`;
  h+=`<div class="card welcome"><div class="date">◷ &nbsp; ${new Date().toLocaleDateString("id-ID",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div><strong style="margin-top:12px;display:block">Welcome to your workspace.</strong><div class="note">Institut Teknologi Sains Bandung</div><div class="leaf" style="margin-top:8px">✧ &nbsp; Let's Grow Together.</div></div>`;
- h+=`<div class="kpis">${stat("Konten Diproduksi",prod,prodTarget,"▣","prod","s.d. hari ini")}${stat("Konten Tayang",pub,pubTarget,"◉","pub","s.d. hari ini")}${stat("Total Followers",tot,folTarget,"♧","fol",act.length?"("+act.length+" platform)":"")}${stat("Data Insight",S.insight.length,0,"▤","ins","")}${kpiOpen?`<div class="card kpidetail">${kpiDetail(kpiOpen,{D,last,act,P})}</div>`:""}</div>`;
+ h+=`<div class="kpis">${stat("Konten Diproduksi",prod,prodTarget,"▣","prod","s.d. hari ini")}${stat("Konten Tayang",pub,pubTarget,"◉","pub","s.d. hari ini")}${stat("Penambahan Followers",folGain,folTarget,"♧","fol",act.length?"(sejak "+dmy(P.st).slice(0,5)+")":"")}${stat("Data Insight",S.insight.length,0,"▤","ins","")}${kpiOpen?`<div class="card kpidetail">${kpiDetail(kpiOpen,{D,last,act,P})}</div>`:""}</div>`;
  h+=`<div class="card content-performance"><div class="dash-title"><h2>Content Performance</h2><span class="note">${year}</span></div><div class="chartbox"><canvas id="c1"></canvas></div></div>`;
  h+=`<div class="card recent-activity"><div class="dash-title"><h2>Recent Activity</h2><span class="note">View all →</span></div>`;
  if(recent.length){recent.forEach((r,i)=>{h+=`<div class="activity"><div class="ico">${["✦","✓","◉","↗","▣","✎"][i%6]}</div><div class="grow"><b>${esc(r.title||"Konten tanpa judul")}</b><small>${esc(r.platform||"Platform")} • ${r.pub?dmy(r.pub):r.prod?dmy(r.prod):"Belum ada tanggal"}</small></div><span class="pill ${r.status==="Tayang"?"t":r.status==="Batal"?"x":"s"}">${esc(r.status||"Ide")}</span></div>`})}else h+=`<div class="note" style="padding:20px 0">Belum ada aktivitas. Tambahkan konten melalui menu Content Tracker.</div>`;
@@ -518,11 +518,11 @@ function fcPreview(){
  $("#fc_save").disabled=!!r.missing;
 }
 function followersTab(){
- if(!FC)FC={open:false,pl:"TikTok",now:"",date:today(),start:S.settings.year+"-08",nets:{}};
+ if(!FC)FC={open:false,pl:"TikTok",now:"",date:today(),start:(()=>{let [y,m]=kpiStart().split("-").map(Number);m--;if(m<1){m=12;y--}return y+"-"+pad(m)})(),nets:{}};
  let pre=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">🧮 Hitung mundur followers</h2><button class="b" id="fc_tg">${FC.open?"Tutup":"Buka kalkulator"}</button></div>`;
  if(FC.open){
   const M=fcMonths();
-  pre+=`<p class="note">Untuk mengisi data followers bulan-bulan lalu. Isi jumlah followers hari ini, lalu <b>pengikut neto</b> (followers baru dikurangi yang berhenti mengikuti) tiap bulan dari TikTok Studio / Insight Instagram. Dashboard menghitung posisi followers di akhir tiap bulan. Hasilnya perkiraan, bukan angka resmi per tanggal.</p>
+  pre+=`<p class="note">Untuk mengisi data followers bulan-bulan lalu. Isi jumlah followers hari ini, lalu <b>pengikut neto</b> (followers baru dikurangi yang berhenti mengikuti) tiap bulan dari TikTok Studio / Insight Instagram. Dashboard menghitung posisi followers di akhir tiap bulan. Hasilnya perkiraan, bukan angka resmi per tanggal.<br><b>Tips:</b> biarkan "Mulai dari akhir bulan" di bulan <b>sebelum</b> mulai pencatatan (mis. Juli), supaya angka awal periode tercatat dan penambahan sejak Agustus bisa dihitung.</p>
   <div class="form"><label>Platform<select id="fc_pl">${PL.map(p=>`<option ${p===FC.pl?"selected":""}>${p}</option>`).join("")}</select></label>
   <label>Followers hari ini<input id="fc_now" type="number" min="0" inputmode="numeric" value="${esc(FC.now)}"></label>
   <label>Tanggal hari ini<input id="fc_date" type="date" value="${FC.date}"></label>
@@ -629,6 +629,13 @@ function kpiPeriod(){
  const days=st>en?0:Math.round((new Date(en)-new Date(st))/864e5)+1;
  return {st,en,days};
 }
+
+/* ---------- penambahan followers sejak mulai pencatatan ---------- */
+function folGrowth(p,st){
+ const pts=S.followers.filter(r=>r[p]!==""&&r[p]!=null&&r.date).sort((a,b)=>a.date<b.date?-1:1);if(!pts.length)return null;
+ const before=pts.filter(r=>r.date<=st),base=before.length?before[before.length-1]:pts[0],cur=pts[pts.length-1];
+ return {base:+base[p],baseDate:base.date,cur:+cur[p],curDate:cur.date,gain:+cur[p]-+base[p],late:!before.length,prev:pts.length>1?pts[pts.length-2]:null};
+}
 function kpiDetail(k,{D,last,act,P}){
  const y=S.settings.year,inP=d=>d&&d>=P.st&&d<=P.en,cnt=(rows,f)=>{const m={};rows.forEach(r=>{const v=r[f]||"(kosong)";m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
  const bars=(title,arr,tot)=>`<div><h3 class="kd-h">${title}</h3>`+(arr.length?arr.map(([n,v])=>`<div class="kd-row"><span>${esc(n)}</span><div class="bar"><i style="width:${pct(v,tot)}%"></i></div><b>${n0(v)}</b></div>`).join(""):`<p class="note">Belum ada data.</p>`)+`</div>`;
@@ -641,10 +648,13 @@ function kpiDetail(k,{D,last,act,P}){
   return h;
  }
  if(k==="fol"){
-  const T=S.settings.tf;let h=`<div class="dash-title"><h2>Detail Total Followers</h2><button class="l" data-go="followers">Buka Audience →</button></div><p class="note">Target ${n0(T)} followers per platform, dihitung hanya untuk platform yang punya data (${act.length? act.map(esc).join(", "):"belum ada"}).</p><div class="scroll"><table><tr><th>Platform</th><th class="r">Followers</th><th>Per tanggal</th><th class="r">Perubahan</th><th class="r">Target</th><th style="min-width:120px">Capaian</th></tr>`;
-  PL.forEach((p,i)=>{const pts=S.followers.filter(r=>r[p]!==""&&r[p]!=null).sort((a,b)=>a.date<b.date?-1:1);if(!pts.length)return;const a=pts[pts.length-1],b=pts[pts.length-2],ch=b?+a[p]-+b[p]:null;
-   h+=`<tr><td>${esc(p)}</td><td class="r"><b>${n0(a[p])}</b></td><td>${dmy(a.date)}</td><td class="r">${ch==null?"–":`<span style="color:${ch>=0?"#53e2b2":"#ff8ca5"}">${ch>=0?"+":""}${n0(ch)}</span> <span class="note">sejak ${dmy(b.date)}</span>`}</td><td class="r">${n0(T)}</td><td><div class="bar"><i style="width:${Math.min(100,pct(+a[p],T))}%"></i></div><span class="note">${pct(+a[p],T)}%</span></td></tr>`});
-  return h+`</table></div>`+(act.length?"":`<p class="note">Belum ada data followers.</p>`);
+  const T=S.settings.tf;let tg=0,tt=0;
+  let h=`<div class="dash-title"><h2>Detail Penambahan Followers</h2><button class="l" data-go="followers">Buka Audience →</button></div><p class="note">Target <b>+${n0(T)}</b> followers baru per platform sejak <b>${dmy(P.st)}</b> (mulai pencatatan). Penambahan = followers terbaru − followers pada awal periode.</p><div class="scroll"><table><tr><th>Platform</th><th class="r">Awal periode</th><th class="r">Terbaru</th><th class="r">Penambahan</th><th class="r">Target</th><th style="min-width:120px">Capaian</th></tr>`;
+  PL.forEach(p=>{const g=folGrowth(p,P.st);if(!g)return;tg+=g.gain;tt+=g.cur;
+   h+=`<tr><td>${esc(p)}</td><td class="r">${n0(g.base)} <span class="note">${dmy(g.baseDate)}${g.late?" ⚠":""}</span></td><td class="r">${n0(g.cur)} <span class="note">${dmy(g.curDate)}</span></td><td class="r"><b style="color:${g.gain>=0?"#53e2b2":"#ff8ca5"}">${g.gain>=0?"+":""}${n0(g.gain)}</b></td><td class="r">+${n0(T)}</td><td><div class="bar"><i style="width:${Math.max(0,Math.min(100,pct(g.gain,T)))}%"></i></div><span class="note">${pct(g.gain,T)}%</span></td></tr>`});
+  h+=`<tr><td><b>Total</b></td><td></td><td class="r"><b>${n0(tt)}</b></td><td class="r"><b>${tg>=0?"+":""}${n0(tg)}</b></td><td class="r">+${n0(T*act.length)}</td><td></td></tr></table></div>`;
+  if(PL.some(p=>{const g=folGrowth(p,P.st);return g&&g.late}))h+=`<p class="note" style="color:#ffc766">⚠ Belum ada data followers pada/sebelum ${dmy(P.st)} untuk platform bertanda ⚠, jadi penambahan dihitung dari catatan pertama. Tambahkan angka followers per ${dmy(P.st)} (atau akhir bulan sebelumnya) di menu Audience — kalkulator hitung mundur bisa membantu.</p>`;
+  return act.length?h:`<p class="note">Belum ada data followers.</p>`;
  }
  if(k==="ins"){
   const R=S.insight,sm=(rows,f)=>rows.reduce((a,r)=>a+(+r[f]||0),0);
@@ -688,9 +698,9 @@ function settings(){
  <label>Mulai pencatatan (untuk target)<input id="s_start" type="date" value="${kpiStart()}"></label>
  <label>Target konten diproduksi per hari<input id="s_tp" type="number" min="0" value="${s.tp}"></label>
  <label>Target konten ditayangkan per hari<input id="s_tpub" type="number" min="0" value="${s.tpub}"></label>
- <label>Target followers per platform<input id="s_tf" type="number" min="0" value="${s.tf}"></label>${PIL.map((p,i)=>`<label>Target pilar ${esc(p[0])} (%)<input id="s_pt${i}" type="number" min="0" max="100" value="${ptg(p)}"></label>`).join("")}<p class="note" style="grid-column:1/-1">Target porsi pilar sebaiknya berjumlah 100%.</p></div>
+ <label>Target penambahan followers per platform (sejak mulai pencatatan)<input id="s_tf" type="number" min="0" value="${s.tf}"></label>${PIL.map((p,i)=>`<label>Target pilar ${esc(p[0])} (%)<input id="s_pt${i}" type="number" min="0" max="100" value="${ptg(p)}"></label>`).join("")}<p class="note" style="grid-column:1/-1">Target porsi pilar sebaiknya berjumlah 100%.</p></div>
  <div class="row" style="margin-top:12px"><button class="b p" id="ss">Simpan</button></div>
- <p class="note">Target dihitung dari target per hari dikali jumlah hari sejak tanggal mulai pencatatan sampai hari ini. Target followers hanya dihitung untuk platform yang sudah punya data. Konten dihitung ditayangkan jika status Tayang dan tanggal tayang terisi.</p></div>
+ <p class="note">Target dihitung dari target per hari dikali jumlah hari sejak tanggal mulai pencatatan sampai hari ini. Target followers adalah target penambahan followers baru per platform sejak tanggal mulai pencatatan, dan hanya dihitung untuk platform yang sudah punya data. Konten dihitung ditayangkan jika status Tayang dan tanggal tayang terisi.</p></div>
 ${trashCard()}
  <div class="card"><h2>Cadangan data</h2><p class="note">Ekspor berkala sebagai cadangan, atau pulihkan dari file cadangan sebelumnya.</p>
  <div class="row"><button class="b" id="ex">Ekspor cadangan (JSON)</button><input type="file" id="im" accept=".json"></div><div class="note" id="bk"></div></div>`;
