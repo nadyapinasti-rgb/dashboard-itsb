@@ -192,7 +192,7 @@ async function enterAppNow(session){
 /* ---------- tampilan ---------- */
 function nav(){$("#nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" class="${t[0]===tab?"on":""}">${t[1]}</button>`).join("")}
 $("#nav").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;edit=null;render()}};
-function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,todo:()=>crud("todo"),tracker:()=>crud("tracker"),insight:()=>crud("insight"),lap:laporan,followers:()=>crud("followers"),prodi,set:settings})[tab]()}
+function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,todo:()=>crud("todo"),tracker:()=>crud("tracker"),insight:()=>crud("insight"),lap:laporan,followers:followersTab,prodi,set:settings})[tab]()}
 function monthData(){
  const y=S.settings.year,{tp,tpub}=S.settings,out=[];
  for(let m=1;m<=12;m++){
@@ -431,6 +431,56 @@ function importView(k){
    persist("insight")}
   imp=null;flashMsg=(`✓ Impor selesai: ${addT} konten baru di Tracker${skipT?` (${skipT} sudah ada, dilewati)`:""} • Insight: ${addI} baru, ${updI} diperbarui`);render();
  };
+}
+
+/* ---------- kalkulator hitung mundur followers ---------- */
+let FC=null;
+function fcMonths(){
+ const [sy,sm]=FC.start.split("-").map(Number),[ty,tm]=FC.date.split("-").map(Number),out=[];
+ let y=sy,m=sm;while(y<ty||(y===ty&&m<tm)){m++;if(m>12){m=1;y++}out.push({y,m,partial:y===ty&&m===tm})}
+ return out;
+}
+function fcCalc(){
+ const M=fcMonths(),res=[];let cur=+FC.now;if(FC.now===""||isNaN(cur))return null;
+ res.push({date:FC.date,v:cur,label:"Hari ini"});
+ for(let i=M.length-1;i>=0;i--){const n=FC.nets[M[i].y+"-"+M[i].m];if(n===""||n==null||isNaN(+n))return {res,missing:M[i]};cur-=+n;const pm=M[i].m===1?12:M[i].m-1,py=M[i].m===1?M[i].y-1:M[i].y;res.push({date:ymd(py,pm,new Date(py,pm,0).getDate()),v:cur,label:"Akhir "+MN[pm-1]})}
+ return {res};
+}
+function fcPreview(){
+ const r=fcCalc(),el=$("#fc_prev");if(!el)return;
+ if(!r){el.innerHTML=`<p class="note">Isi jumlah followers hari ini untuk melihat hasil.</p>`;$("#fc_save").disabled=true;return}
+ el.innerHTML=`<div class="scroll"><table><tr><th>Tanggal</th><th></th><th class="r">${esc(FC.pl)}</th></tr>`+r.res.map(x=>`<tr><td>${dmy(x.date)}</td><td class="note">${x.label}</td><td class="r"><b>${n0(x.v)}</b></td></tr>`).join("")+`</table></div>`+(r.missing?`<p class="note" style="color:#ffc766">Isi pengikut neto ${MN[r.missing.m-1]} ${r.missing.y} untuk melanjutkan hitungan.</p>`:"");
+ $("#fc_save").disabled=!!r.missing;
+}
+function followersTab(){
+ if(!FC)FC={open:false,pl:"TikTok",now:"",date:today(),start:S.settings.year+"-08",nets:{}};
+ let pre=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">🧮 Hitung mundur followers</h2><button class="b" id="fc_tg">${FC.open?"Tutup":"Buka kalkulator"}</button></div>`;
+ if(FC.open){
+  const M=fcMonths();
+  pre+=`<p class="note">Untuk mengisi data followers bulan-bulan lalu. Isi jumlah followers hari ini, lalu <b>pengikut neto</b> (followers baru dikurangi yang berhenti mengikuti) tiap bulan dari TikTok Studio / Insight Instagram. Dashboard menghitung posisi followers di akhir tiap bulan. Hasilnya perkiraan, bukan angka resmi per tanggal.</p>
+  <div class="form"><label>Platform<select id="fc_pl">${PL.map(p=>`<option ${p===FC.pl?"selected":""}>${p}</option>`).join("")}</select></label>
+  <label>Followers hari ini<input id="fc_now" type="number" min="0" inputmode="numeric" value="${esc(FC.now)}"></label>
+  <label>Tanggal hari ini<input id="fc_date" type="date" value="${FC.date}"></label>
+  <label>Mulai dari akhir bulan<input id="fc_start" type="month" value="${FC.start}"></label></div>
+  <div class="form" style="margin-top:10px">`+M.slice().reverse().map(x=>`<label>Pengikut neto ${x.partial?"1–"+(+FC.date.slice(8))+" ":""}${MN[x.m-1]} ${x.y}<input data-net="${x.y}-${x.m}" type="number" step="1" value="${esc(FC.nets[x.y+"-"+x.m]??"")}"></label>`).join("")+`</div>
+  <div id="fc_prev" style="margin-top:10px"></div>
+  <div class="row" style="margin-top:10px"><button class="b p" id="fc_save">Simpan ke tabel Followers</button><span class="note">Tanggal yang sudah ada akan diperbarui untuk platform ini saja.</span></div>`;
+ }
+ crud("followers",pre+`</div>`);
+ $("#fc_tg").onclick=()=>{FC.open=!FC.open;render()};
+ if(!FC.open)return;
+ $("#fc_pl").onchange=e=>{FC.pl=e.target.value;fcPreview()};
+ $("#fc_now").oninput=e=>{FC.now=e.target.value;fcPreview()};
+ const okDate=v=>v&&+v.slice(0,4)>=1900;
+ $("#fc_date").onchange=e=>{if(okDate(e.target.value)&&e.target.value!==FC.date){FC.date=e.target.value;render()}};
+ $("#fc_start").onchange=e=>{if(okDate(e.target.value)&&e.target.value!==FC.start){FC.start=e.target.value;render()}};
+ document.querySelectorAll("[data-net]").forEach(i=>i.oninput=()=>{FC.nets[i.dataset.net]=i.value;fcPreview()});
+ $("#fc_save").onclick=()=>{
+  const r=fcCalc();if(!r||r.missing)return;
+  r.res.forEach(x=>{let row=S.followers.find(f=>f.date===x.date);if(!row){row={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),date:x.date};S.followers.push(row)}row[FC.pl]=x.v});
+  persist("followers");flashMsg=`✓ ${r.res.length} data followers ${FC.pl} tersimpan.`;FC.now="";FC.nets={};render();
+ };
+ fcPreview();
 }
 const ptg=p=>{const t=S.settings.pt;return t&&t[p[0]]!=null?+t[p[0]]:p[1]};
 function pil(){
