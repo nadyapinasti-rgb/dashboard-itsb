@@ -306,14 +306,14 @@ function laporan(){
 const IMPF=[["title","Judul / caption"],["link","Link postingan"],["pub","Tgl tayang"],["format","Jenis / format"],["views","Views / tayangan"],["likes","Likes / suka"],["comments","Komentar"],["shares","Share / bagikan"],["saves","Saves / simpan"]];
 const IMPSYN={
  title:["description","deskripsi","caption","keterangan","judul","title","desc","video title","judul video","teks","postingan"],
- link:["permalink","tautan permanen","video link","tautan video","link","tautan","url","videolink"],
- pub:["publish time","waktu publikasi","waktu dipublikasikan","waktu diterbitkan","post time","waktu posting","create time","created time","date posted","tanggal posting","tanggal publikasi","tanggal diunggah","tanggal","date","waktu"],
- format:["post type","jenis postingan","jenis konten","content type","media type","type","jenis","format"],
+ link:["permalink","tautan permanen","video link","tautan video","url posting","post url","link","tautan","url","videolink"],
+ pub:["publish time","tanggal publikasi posting","tanggal publikasi","created date","waktu publikasi","waktu dipublikasikan","waktu diterbitkan","post time","waktu posting","create time","created time","date posted","tanggal posting","tanggal publikasi","tanggal diunggah","tanggal","date","waktu"],
+ format:["post type","jenis posting","jenis postingan","jenis konten","content type","media type","type","jenis","format"],
  views:["views","tayangan","video views","tayangan video","total views","plays","diputar","impressions","impresi","reach","jangkauan"],
  likes:["likes","suka","total likes","reactions","reaksi","likes and reactions"],
  comments:["comments","komentar","total comments"],
- shares:["shares","bagikan","dibagikan","total shares","share"],
- saves:["saves","simpan","disimpan","favorites","favorit","add to favorites"]
+ shares:["shares","bagikan","dibagikan","pembagian","reposts","total shares","share"],
+ saves:["saves","simpan","disimpan","penyimpanan","favorites","favorit","add to favorites"]
 };
 const normH=h=>String(h||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 function impGuess(headers){
@@ -345,14 +345,17 @@ function toDate(v,fmt){
  if(m=t.match(/^([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/i)){const mo=MON[m[1].toLowerCase()];if(mo)return ymd(+m[3],mo,+m[2])}
  return "";
 }
-function impDetectFmt(col){
+function impDetectFmt(col,platform){
  for(const v of col){const m=String(v||"").trim().match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.]\d{2,4}/);if(m){if(+m[1]>12)return "dmy";if(+m[2]>12)return "mdy"}}
- return "mdy";
+ const fut=f=>col.filter(v=>{const d=toDate(v,f);return d&&d>today()}).length,a=fut("dmy"),b=fut("mdy");
+ if(a!==b)return a<b?"dmy":"mdy";
+ return platform==="Instagram"||platform==="Facebook"?"mdy":"dmy";
 }
 function impFormat(v,platform){
  const t=String(v||"").toLowerCase();
  if(/reel|video|short/.test(t))return FM[0];
- if(/carousel|image|foto|photo|gambar|feed|album|post/.test(t))return FM[1];
+ if(/artikel|article|teks|text/.test(t))return FM[4];
+ if(/carousel|image|foto|photo|gambar|feed|album|post|dokumen|document/.test(t))return FM[1];
  if(/story|cerita/.test(t))return FM[2];
  if(/live/.test(t))return FM[5];
  return platform==="TikTok"?FM[0]:"";
@@ -373,17 +376,29 @@ async function impRead(file){
  await loadXLSX();
  const isCsv=/\.(csv|txt)$/i.test(file.name);
  const wb=isCsv?XLSX.read((await file.text()).replace(/^\uFEFF/,""),{type:"string",cellDates:true}):XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
- const ws=wb.Sheets[wb.SheetNames[0]],A=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});
+ const names=wb.SheetNames,score=n=>{const T=impSheet(wb,n),m=impGuess(T.headers);return Object.values(m).filter(v=>v>=0).length*1e4+T.data.length};
+ const pick=names.length>1?names.slice().sort((a,b)=>score(b)-score(a))[0]:names[0];
+ return Object.assign(impSheet(wb,pick),{wb,sheets:names});
+}
+function impSheet(wb,name){
+ const A=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:""});
  let hi=A.findIndex(r=>r.filter(c=>typeof c==="string"&&/[a-z]/i.test(c)).length>=3);if(hi<0)hi=0;
- const headers=(A[hi]||[]).map((h,i)=>String(h||"Kolom "+(i+1)).trim());
- const data=A.slice(hi+1).filter(r=>r.some(c=>c!==""&&c!=null));
- return {headers,data,sheet:wb.SheetNames[0]};
+ const H=(A[hi]||[]).map(h=>String(h==null?"":h).trim()),rows=A.slice(hi+1).filter(r=>r.some(c=>c!==""&&c!=null));
+ // tabel berdampingan (dipisah kolom kosong), mis. ekspor LinkedIn "Posting populer": gabungkan per kolom pertama (URL)
+ const blocks=[];let st=null;H.forEach((h,i)=>{if(h){if(st==null)st=i}else if(st!=null){blocks.push([st,i]);st=null}});if(st!=null)blocks.push([st,H.length]);
+ if(blocks.length>1&&blocks.every(b=>normH(H[b[0]])===normH(H[blocks[0][0]]))){
+  const hs=[],idx=[];blocks.forEach((b,bi)=>{for(let i=b[0];i<b[1];i++){if(bi>0&&i===b[0])continue;if(hs.includes(H[i]))continue;hs.push(H[i]);idx.push(i)}});
+  const M=new Map();blocks.forEach(b=>rows.forEach(r=>{const key=r[b[0]];if(key===""||key==null)return;if(!M.has(key))M.set(key,{});const o=M.get(key);for(let i=b[0];i<b[1];i++)if(r[i]!==""&&r[i]!=null&&o[H[i]]==null)o[H[i]]=r[i]}));
+  return {headers:hs,data:[...M.values()].map(o=>hs.map(h=>o[h]??"")),sheet:name};
+ }
+ return {headers:H.map((h,i)=>h||"Kolom "+(i+1)),data:rows,sheet:name};
 }
 function impBuild(){
  const {headers,data,map,platform,fmt,from,to}=imp,get=(r,f)=>map[f]>=0?r[map[f]]:"";
  const out=[];
  data.forEach(r=>{
   let title=String(get(r,"title")||"").split(/\r?\n/)[0].trim(),link=String(get(r,"link")||"").trim();
+  if(!title&&/linkedin\.com\/(posts|feed)/i.test(link)){const m=link.match(/_([^\/]+?)-(?:ugcPost|share|activity)-/i);if(m)title=m[1].replace(/-/g," ").replace(/^./,c=>c.toUpperCase())}
   if(title.length>150)title=title.slice(0,147)+"…";
   const pub=toDate(get(r,"pub"),fmt);
   if(from&&(!pub||pub<from))return;if(to&&(!pub||pub>to))return;
@@ -401,7 +416,7 @@ function importView(k){
  if(I.err)h+=`<p class="note" style="color:#ff8ca5">${esc(I.err)}</p>`;
  if(I.headers){
   const rows=impBuild();
-  h+=`<p class="note">File: <b>${esc(I.name)}</b> • ${I.data.length} baris data terbaca.</p><h2 style="margin-top:14px">1. Cocokkan kolom</h2><div class="form">`+IMPF.map(([f,l])=>`<label>${l}<select data-im="${f}"><option value="-1">— tidak ada —</option>${I.headers.map((x,i)=>`<option value="${i}" ${I.map[f]===i?"selected":""}>${esc(x)}</option>`).join("")}</select></label>`).join("")+`</div>
+  h+=`<p class="note">File: <b>${esc(I.name)}</b> • ${I.data.length} baris data terbaca.</p>`+(I.sheets&&I.sheets.length>1?`<div class="form"><label>Sheet yang dibaca<select id="i_sheet">${I.sheets.map(n=>`<option ${n===I.sheet?"selected":""}>${esc(n)}</option>`).join("")}</select></label></div>`:"")+`<h2 style="margin-top:14px">1. Cocokkan kolom</h2><div class="form">`+IMPF.map(([f,l])=>`<label>${l}<select data-im="${f}"><option value="-1">— tidak ada —</option>${I.headers.map((x,i)=>`<option value="${i}" ${I.map[f]===i?"selected":""}>${esc(x)}</option>`).join("")}</select></label>`).join("")+`</div>
   <h2 style="margin-top:14px">2. Pengaturan</h2><div class="form">
   <label>Format tanggal di file<select id="i_fmt"><option value="mdy" ${I.fmt==="mdy"?"selected":""}>Bulan/Hari/Tahun (ekspor Meta)</option><option value="dmy" ${I.fmt==="dmy"?"selected":""}>Hari/Bulan/Tahun</option></select></label>
   <label>Hanya tayang mulai<input type="date" id="i_from" value="${I.from||""}"></label><label>sampai<input type="date" id="i_to" value="${I.to||""}"></label>
@@ -416,10 +431,11 @@ function importView(k){
  $("#ix").onclick=()=>{imp=null;render()};
  $("#i_pl").onchange=e=>{I.platform=e.target.value;render()};
  $("#i_file").onchange=async e=>{const f=e.target.files[0];if(!f)return;I.err="";
-  try{const R=await impRead(f);if(!R.data.length)throw new Error("File tidak berisi baris data.");Object.assign(I,R,{name:f.name,map:impGuess(R.headers)});const pi=I.map.pub;I.fmt=impDetectFmt(pi>=0?R.data.map(r=>r[pi]):[]);}
+  try{const R=await impRead(f);if(!R.data.length)throw new Error("File tidak berisi baris data.");Object.assign(I,R,{name:f.name,map:impGuess(R.headers)});const pi=I.map.pub;I.fmt=impDetectFmt(pi>=0?R.data.map(r=>r[pi]):[],I.platform);}
   catch(x){console.error(x);I.err="Gagal membaca file: "+(x.message||x)}
   render()};
  document.querySelectorAll("[data-im]").forEach(s=>s.onchange=()=>{I.map[s.dataset.im]=+s.value;render()});
+ if($("#i_sheet"))$("#i_sheet").onchange=e=>{Object.assign(I,impSheet(I.wb,e.target.value));I.map=impGuess(I.headers);const pi=I.map.pub;I.fmt=impDetectFmt(pi>=0?I.data.map(r=>r[pi]):[],I.platform);render()};
  [["i_fmt","fmt"],["i_from","from"],["i_to","to"],["i_idate","idate"]].forEach(([id,key])=>{const el=$("#"+id);if(!el)return;const apply=()=>{const v=el.value;if(el.type==="date"&&v&&+v.slice(0,4)<1900)return;if(I[key]===v)return;I[key]=v;render()};el.onchange=apply;el.onblur=apply});
  [["i_toT","toT"],["i_toI","toI"]].forEach(([id,key])=>{const el=$("#"+id);if(el)el.onchange=()=>{I[key]=el.checked}});
  if($("#i_go"))$("#i_go").onclick=()=>{
