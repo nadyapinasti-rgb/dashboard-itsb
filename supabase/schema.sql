@@ -1,5 +1,6 @@
--- ITSB Social Media Dashboard: shared team workspace
--- Run once in Supabase SQL Editor.
+-- SocialSync (ITSB Social Media Dashboard): shared team workspace
+-- Jalankan di Supabase SQL Editor. Aman dijalankan ulang (idempotent),
+-- termasuk pada project lama yang dibuat dengan versi schema sebelumnya.
 create table if not exists public.workspace_members (
   workspace_id uuid not null,
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -10,11 +11,33 @@ create table if not exists public.workspace_members (
 
 create table if not exists public.app_data (
   workspace_id uuid not null,
-  data_key text not null check (data_key in ('settings','tracker','insight','followers','prodi')),
+  data_key text not null,
   payload jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now(),
   primary key (workspace_id, data_key)
 );
+
+-- Daftar modul data yang diizinkan. Blok ini juga memperbarui project lama
+-- (menghapus aturan data_key versi lama lalu memasang yang terbaru).
+--   settings, tracker, insight, followers, prodi : modul awal
+--   todo                                         : My Tasks
+--   rep_ig, rep_tt                               : Reports Instagram / TikTok
+--   trash                                        : Tempat Sampah (30 hari)
+do $$
+declare c text;
+begin
+  for c in
+    select conname from pg_constraint
+    where conrelid = 'public.app_data'::regclass and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%data_key%'
+  loop
+    execute format('alter table public.app_data drop constraint %I', c);
+  end loop;
+end $$;
+
+alter table public.app_data
+  add constraint app_data_data_key_check
+  check (data_key in ('settings','tracker','insight','followers','prodi','todo','rep_ig','rep_tt','trash'));
 
 alter table public.workspace_members enable row level security;
 alter table public.app_data enable row level security;
@@ -71,3 +94,6 @@ for delete to authenticated using (
 
 -- Enable public.app_data in Database > Publications > supabase_realtime
 -- so the dashboard can receive changes made by other team members.
+
+-- Realtime: aktifkan sekali (abaikan error "already member of publication").
+-- alter publication supabase_realtime add table public.app_data;
