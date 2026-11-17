@@ -19,6 +19,15 @@ main{margin-left:194px;padding:108px 18px 30px;max-width:none;min-height:100vh}.
 .dashboard-grid>.hero{grid-column:1;grid-row:1}.dashboard-grid>.welcome{grid-column:2;grid-row:1}.dashboard-grid>.kpis{grid-column:1;grid-row:2}.dashboard-grid>.content-performance{grid-column:1;grid-row:3}.dashboard-grid>.recent-activity{grid-column:2;grid-row:2/ span 2}.dashboard-grid>.monthly-overview{grid-column:1;grid-row:4}.dashboard-grid>.quick-actions{grid-column:1;grid-row:5}.dashboard-grid>.followers-insights{grid-column:2;grid-row:4/ span 2}.dashboard-grid>.dashboard-wide{grid-column:1/-1;grid-row:6}
 @media(max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.dashboard-grid{grid-template-columns:1fr 1fr}}@media(max-width:800px){.dashboard-grid>*{grid-column:auto!important;grid-row:auto!important}.dashboard-grid>.dashboard-wide{grid-column:1/-1!important}nav{width:170px}main{margin-left:170px;padding-left:12px;padding-right:12px}header .motto,header .search{display:none}.dashboard-grid{grid-template-columns:1fr}.hero .hero-badge{display:none}}@media(max-width:600px){header{height:74px;padding:9px 12px}header .brand-mark{width:42px;height:42px}header h1{font-size:18px}nav{top:74px;position:fixed;width:100%;height:48px;bottom:auto;display:flex;padding:4px;overflow-x:auto;border-right:0;border-bottom:1px solid #164579}nav:before,nav:after{display:none}nav button{width:auto;min-width:max-content;margin:0;padding:7px 9px}nav button:before{display:none}main{margin:0;padding:134px 10px 20px}.kpis{grid-template-columns:repeat(2,1fr)}.dashboard-grid{display:block}.dashboard-grid>.card{margin-bottom:12px}.hero{min-height:110px;padding:15px}.hero h2{font-size:22px}.cal{gap:2px}.day{min-height:64px}.day div.it{display:none}.day .n{display:block;font-size:10px;color:#718eb6}.chartbox{height:210px}}
 
+
+/* Ikon menu berdasarkan tab (bukan urutan) */
+nav button[data-t="dash"]:before{content:"⌂"}nav button[data-t="cal"]:before{content:"▦"}nav button[data-t="todo"]:before{content:"☑"}nav button[data-t="tracker"]:before{content:"▤"}nav button[data-t="insight"]:before{content:"◉"}nav button[data-t="lap"]:before{content:"▥"}nav button[data-t="followers"]:before{content:"↗"}nav button[data-t="prodi"]:before{content:"◎"}nav button[data-t="set"]:before{content:"⚙"}
+/* Laporan akun */
+.lapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.lapbox{border:1px solid #1d4c84;border-radius:12px;padding:10px 12px;background:#06204a80;display:flex;flex-direction:column;gap:3px}
+.lapbox b{font-size:20px;color:#fff}
+.lapbox .up{color:#53e2b2;font-size:11px;font-weight:700}.lapbox .down{color:#ff8ca5;font-size:11px;font-weight:700}
+.day div.it.todo-it{color:#ffc766}.day div.it.todo-it.done{color:#7f93b3;text-decoration:line-through}
 /* Mobile header fix: satu baris, tidak bertumpuk */
 @media(max-width:600px){
 header{gap:10px;height:64px;padding:8px 12px}
@@ -58,9 +67,12 @@ const MN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","Se
 const PIL=[["Edukasi & Akademik",20],["PMB & Beasiswa",20],["Kehidupan Kampus",15],["Testimoni & Alumni",15],["Prestasi & Inovasi",10],["Karier & Industri",10],["Event & Kegiatan",5],["Hiburan & Tren",5]],PN=PIL.map(p=>p[0]);
 const PRODI0=["Informatika","Perencanaan Wilayah dan Kota (PWK)","Manajemen Bisnis Internasional (MBI)","Teknik Metalurgi dan Material","Teknik Perminyakan","Teknologi Pengolahan Pulp dan Kertas","Teknologi Pengolahan Sawit","Prodi 8 (isi nama)","Prodi 9 (isi nama)","Prodi 10 (isi nama)","Prodi 11 (isi nama)","Prodi 12 (isi nama)","Prodi 13 (isi nama)"];
 const SLOT=["Edukasi prodi","Info beasiswa prodi","Sharing session alumni","Sharing session mahasiswa","Testimoni mahasiswa","Testimoni alumni","Profil dosen","Fasilitas dan lab","Prospek karier","Prestasi dan kegiatan mahasiswa"];
-const TABS=[["dash","Dashboard"],["cal","Kalender"],["tracker","Tracker"],["insight","Insight"],["followers","Followers"],["prodi","Prodi"],["set","Pengaturan"]];
+const TABS=[["dash","Dashboard"],["cal","Kalender"],["todo","To-do"],["tracker","Tracker"],["insight","Insight"],["lap","Laporan Akun"],["followers","Followers"],["prodi","Prodi"],["set","Pengaturan"]];
+const TS=["Belum","Proses","Selesai"],TP=["Tinggi","Sedang","Rendah"];
+const PER_IG=["7 hari","14 hari","30 hari","90 hari","Kustom"],PER_TT=["7 hari","28 hari","60 hari","365 hari","Kustom"];
 const now=new Date();
-let S={settings:{year:now.getFullYear(),tp:2,tpub:2,tf:10000},tracker:[],insight:[],followers:[],prodi:[]};
+let S={settings:{year:now.getFullYear(),tp:2,tpub:2,tf:10000},tracker:[],insight:[],followers:[],prodi:[],todo:[],rep_ig:[],rep_tt:[]};
+let fsv2={},lapSub="rep_ig",imp=null,flashMsg="";
 let tab="dash",cal={y:now.getFullYear(),m:now.getMonth()+1},edit=null,fsv="",charts=[],db=null,uid=null,q=Promise.resolve(),sb=null,workspaceId=null,realtimeChannel=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -73,20 +85,32 @@ const dmy=s=>s?s.split("-").reverse().join("/"):"";
 const E={
  tracker:{label:"Konten",f:[["title","Judul / ide konten","text"],["platform","Platform","sel",PL],["format","Format","sel",FM],["pillar","Pilar konten","sel",PN],["status","Status","sel",ST],["prod","Tgl selesai produksi","date"],["pub","Tgl tayang","date"],["pic","PIC","text"],["link","Link postingan","text"]],cols:["pub","platform","title","pillar","status","prod","pic"],sort:"pub"},
  insight:{label:"Insight",f:[["date","Tgl ambil data","date"],["platform","Platform","sel",PL],["title","Judul / link konten","text"],["pub","Tgl tayang","date"],["views","Views / Reach","num"],["likes","Likes","num"],["comments","Komentar","num"],["shares","Share","num"],["saves","Saves","num"]],cols:["date","platform","title","views","likes","comments","shares","saves","er"],sort:"date"},
- followers:{label:"Followers",f:[["date","Tanggal","date"]].concat(PL.map(p=>[p,p,"num"])),cols:["date"].concat(PL,["total"]),sort:"date"}
+ followers:{label:"Followers",f:[["date","Tanggal","date"]].concat(PL.map(p=>[p,p,"num"])),cols:["date"].concat(PL,["total"]),sort:"date"},
+ todo:{label:"Tugas",f:[["title","Tugas","text"],["pic","PIC","text"],["due","Tenggat","date"],["prio","Prioritas","sel",TP],["status","Status","sel",TS],["note","Catatan / link","text"]],cols:["due","title","pic","prio","status"],sort:"due",asc:true,filt:["status",TS],nodate:true},
+ rep_ig:{label:"Laporan Instagram",f:[["end","Tgl akhir periode","date"],["per","Periode","sel",PER_IG],["views","Tayangan","num"],["vfol","Tayangan dari pengikut (%)","dec"],["vig","Tayangan Instagram","num"],["vfb","Tayangan Facebook","num"],["reach","Pemirsa (akun dijangkau)","num"],["inter","Interaksi","num"],["ifol","Interaksi dari pengikut (%)","dec"],["engaged","Akun yang berinteraksi","num"],["profact","Aktivitas profil","num"],["visits","Kunjungan profil","num"],["linktap","Ketukan tautan eksternal","num"],["addrtap","Ketukan alamat bisnis","num"],["followers","Pengikut","num"],["note","Catatan","text"]],cols:["end","per","views","reach","inter","engaged","visits","linktap","followers"],sort:"end",nodate:true},
+ rep_tt:{label:"Laporan TikTok",f:[["end","Tgl akhir periode","date"],["per","Periode","sel",PER_TT],["views","Tayangan video","num"],["profile","Tampilan profil","num"],["likes","Suka","num"],["comments","Komentar","num"],["shares","Bagikan","num"],["reward","Perkiraan reward (USD)","usd"],["viewers","Total penonton","num"],["newviewers","Penonton baru","num"],["followers","Jumlah pengikut","num"],["net","Pengikut neto","int"],["note","Catatan","text"]],cols:["end","per","views","profile","likes","comments","shares","viewers","followers","net"],sort:"end",nodate:true}
 };
+const NUMT=["num","dec","int","usd"];
+function isR(k,x){const f=E[k].f.find(y=>y[0]===x);return ["total","er"].includes(x)||(f&&NUMT.includes(f[2]))}
 const LBL={er:"Eng. rate",total:"Total"};
 function lab(k,c){const f=E[k].f.find(x=>x[0]===c);return f?f[1]:LBL[c]||c}
 function cell(k,r,c){
  if(c==="total")return n0(PL.reduce((a,p)=>a+(+r[p]||0),0));
  if(c==="er")return r.views?((["likes","comments","shares","saves"].reduce((a,x)=>a+(+r[x]||0),0)/r.views*100).toFixed(1)+"%"):"";
- const v=r[c];if(c==="status"){return `<span class="pill ${v==="Tayang"?"t":v==="Batal"?"x":v==="Terjadwal"?"s":""}">${esc(v)}</span>`}
- if(["date","pub","prod"].includes(c))return dmy(v);
- if(E[k].f.some(f=>f[0]===c&&f[2]==="num"))return n0(v);
+ const v=r[c];if(c==="status"){return `<span class="pill ${v==="Tayang"||v==="Selesai"?"t":v==="Batal"?"x":v==="Terjadwal"||v==="Proses"?"s":""}">${esc(v)}</span>`}
+ if(c==="prio")return `<span class="pill ${v==="Tinggi"?"x":v==="Sedang"?"s":""}">${esc(v)}</span>`;
+ if(c==="due"){const late=v&&r.status!=="Selesai"&&v<today();return `<span style="${late?"color:#ff8ca5;font-weight:700":""}">${dmy(v)}${late?" ⚠":""}</span>`}
+ if(["date","pub","prod","end"].includes(c))return dmy(v);
+ const ft=E[k].f.find(f=>f[0]===c);
+ if(ft&&NUMT.includes(ft[2])&&(v===""||v==null))return "";
+ if(ft&&ft[2]==="usd")return "$"+Number(v).toLocaleString("id-ID",{maximumFractionDigits:2});
+ if(ft&&ft[2]==="dec")return Number(v).toLocaleString("id-ID",{maximumFractionDigits:1})+"%";
+ if(ft&&ft[2]==="int")return (v>0?"+":"")+n0(v);
+ if(ft&&ft[2]==="num")return n0(v);
  return esc(v);
 }
 /* ---------- cloud storage: Supabase shared workspace ---------- */
-const DATA_KEYS=["settings","tracker","insight","followers","prodi"];
+const DATA_KEYS=["settings","tracker","insight","followers","prodi","todo","rep_ig","rep_tt"];
 function showLogin(message=""){
  const gate=$("#auth-gate"); if(gate)gate.style.display="flex";
  $("#main").style.display="none";$("#nav").style.display="none";
@@ -168,7 +192,7 @@ async function enterAppNow(session){
 /* ---------- tampilan ---------- */
 function nav(){$("#nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" class="${t[0]===tab?"on":""}">${t[1]}</button>`).join("")}
 $("#nav").onclick=e=>{const t=e.target.dataset.t;if(t){tab=t;edit=null;render()}};
-function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,tracker:()=>crud("tracker"),insight:()=>crud("insight"),followers:()=>crud("followers"),prodi,set:settings})[tab]()}
+function render(){nav();charts.forEach(c=>c.destroy());charts=[];({dash,cal:calendar,todo:()=>crud("todo"),tracker:()=>crud("tracker"),insight:()=>crud("insight"),lap:laporan,followers:()=>crud("followers"),prodi,set:settings})[tab]()}
 function monthData(){
  const y=S.settings.year,{tp,tpub}=S.settings,out=[];
  for(let m=1;m<=12;m++){
@@ -208,39 +232,46 @@ function dash(){
 }
 function calendar(){
  const {y,m}=cal,tg=S.settings.tpub,first=new Date(y,m-1,1),off=(first.getDay()+6)%7,dim=new Date(y,m,0).getDate();
- let h=`<div class="card"><div class="row"><button class="b" id="pv">‹</button><b class="grow" style="text-align:center">${MN[m-1]} ${y}</b><button class="b" id="nx">›</button></div><div class="note" style="margin-bottom:8px">Hijau = target harian (${tg} konten) tercapai, merah muda = di bawah target sampai hari ini. Klik tanggal untuk menambah konten.</div><div class="cal">`;
+ let h=`<div class="card"><div class="row"><button class="b" id="pv">‹</button><b class="grow" style="text-align:center">${MN[m-1]} ${y}</b><button class="b" id="nx">›</button></div><div class="note" style="margin-bottom:8px">Hijau = target harian (${tg} konten) tercapai, merah muda = di bawah target sampai hari ini. Klik tanggal untuk menambah konten. <span style="color:#ffc766">☐ = tugas To-do</span> sesuai tenggat.</div><div class="cal">`;
  ["Sen","Sel","Rab","Kam","Jum","Sab","Min"].forEach(d=>h+=`<div class="h">${d}</div>`);
  for(let i=0;i<42;i++){
   const dt=new Date(y,m-1,1-off+i),ds=ymd(dt.getFullYear(),dt.getMonth()+1,dt.getDate()),inm=dt.getMonth()===m-1;
-  const it=S.tracker.filter(r=>r.pub===ds),cl=!inm?"o":it.length>=tg?"g":ds<=today()?"r":"";
-  h+=`<div class="day ${cl}" data-d="${ds}"><span class="d">${dt.getDate()}</span>`+it.slice(0,3).map(r=>`<div class="it">${esc(r.platform)}: ${esc(r.title)}</div>`).join("")+(it.length>3?`<div class="note">+${it.length-3} lagi</div>`:"")+(it.length?`<span class="n">${it.length} konten</span>`:"")+`</div>`;
+  const it=S.tracker.filter(r=>r.pub===ds),td=(S.todo||[]).filter(t=>t.due===ds),cl=!inm?"o":it.length>=tg?"g":ds<=today()?"r":"";
+  h+=`<div class="day ${cl}" data-d="${ds}"><span class="d">${dt.getDate()}</span>`+it.slice(0,3).map(r=>`<div class="it">${esc(r.platform)}: ${esc(r.title)}</div>`).join("")+(it.length>3?`<div class="note">+${it.length-3} lagi</div>`:"")+td.slice(0,2).map(t=>`<div class="it todo-it ${t.status==="Selesai"?"done":""}">${t.status==="Selesai"?"☑":"☐"} ${esc(t.title)}</div>`).join("")+(td.length>2?`<div class="note">+${td.length-2} tugas</div>`:"")+(it.length?`<span class="n">${it.length} konten</span>`:"")+(td.length?`<span class="n" style="color:#ffc766">${td.length} tugas</span>`:"")+`</div>`;
  }
  $("#main").innerHTML=h+"</div></div>";
  $("#pv").onclick=()=>{cal.m--;if(cal.m<1){cal.m=12;cal.y--}render()};
  $("#nx").onclick=()=>{cal.m++;if(cal.m>12){cal.m=1;cal.y++}render()};
  document.querySelectorAll(".day").forEach(d=>d.onclick=()=>{tab="tracker";edit={k:"tracker",id:null,pre:{pub:d.dataset.d,status:"Terjadwal"}};render()});
 }
-function crud(k){
- const c=E[k];let h="";
+function crud(k,pre=""){
+ const c=E[k];let h=pre;
+ if(imp&&imp.k===k){importView(k);return}
+ if(flashMsg){h+=`<div class="card" style="border-color:#1fcd9260;color:#53e2b2">${esc(flashMsg)}</div>`;flashMsg=""}
  if(edit&&edit.k===k){
-  const r=edit.id?S[k].find(x=>x.id===edit.id):Object.assign({date:today()},edit.pre||{});
+  const r=edit.id?S[k].find(x=>x.id===edit.id):Object.assign(c.nodate?{}:{date:today()},k==="todo"?{status:"Belum",prio:"Sedang"}:{},edit.pre||{});
   h+=`<div class="card"><h2>${edit.id?"Ubah":"Tambah"} ${c.label}</h2><div class="form">`+c.f.map(f=>{
    const v=r[f[0]]==null?"":r[f[0]],id="f_"+f[0];
-   const inp=f[2]==="sel"?`<select id="${id}">${f[3].map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${f[2]==="num"?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':""} value="${esc(v)}">`;
+   const inp=f[2]==="sel"?`<select id="${id}">${f[3].map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${NUMT.includes(f[2])?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':f[2]==="dec"||f[2]==="usd"?'min="0" step="any" inputmode="decimal"':f[2]==="int"?'step="1"':""} value="${esc(v)}">`;
    return `<label>${f[1]}${inp}</label>`}).join("")+`</div><div class="row" style="margin-top:12px"><button class="b p" id="sv">Simpan</button><button class="b" id="cn">Batal</button></div></div>`;
  }
- h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (${S[k].length})</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+`<button class="b p" id="ad">+ Tambah</button></div><div class="scroll"><table><tr>`+c.cols.map(x=>`<th class="${["views","likes","comments","shares","saves","total","er"].concat(PL).includes(x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
- const fs=k==="tracker"?fsv:"";
- const rows=S[k].filter(r=>!fs||r.status===fs).slice().sort((a,b)=>(b[c.sort]||"")<(a[c.sort]||"")?-1:1);
- rows.forEach(r=>h+=`<tr>`+c.cols.map(x=>`<td class="${["views","likes","comments","shares","saves","total","er"].concat(PL).includes(x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td><button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
+ h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (${S[k].length})</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"?`<button class="b" id="ipt">⇪ Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div><div class="scroll"><table><tr>`+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
+ const fs=k==="tracker"?fsv:"",fs2=c.filt?fsv2[k]||"":"";
+ let rows=S[k].filter(r=>(!fs||r.status===fs)&&(!fs2||r[c.filt[0]]===fs2)).slice().sort((a,b)=>(b[c.sort]||"")<(a[c.sort]||"")?-1:1);
+ if(c.asc)rows=rows.reverse().sort((a,b)=>(a.status==="Selesai")-(b.status==="Selesai")||(!a.due)-(!b.due));
+ rows.forEach(r=>h+=`<tr>`+c.cols.map(x=>`<td class="${isR(k,x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td style="white-space:nowrap">${k==="todo"&&r.status!=="Selesai"?`<button class="l" data-done="${r.id}">✓ Selesai</button>`:""}<button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
  if(!rows.length)h+=`<tr><td colspan="${c.cols.length+1}" class="note">Belum ada data. Klik “+ Tambah”.</td></tr>`;
  $("#main").innerHTML=h+`</table></div></div>`;
  $("#ad").onclick=()=>{edit={k,id:null};render()};
  if($("#fs"))$("#fs").onchange=e=>{fsv=e.target.value;render()};
+ if($("#fs2"))$("#fs2").onchange=e=>{fsv2[k]=e.target.value;render()};
+ if($("#ipt"))$("#ipt").onclick=()=>{imp={k};edit=null;render()};
+ document.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>{const r=S[k].find(x=>x.id===b.dataset.done);if(r){r.status="Selesai";persist(k);render()}});
+ if(c.after)c.after(k);
  if($("#cn"))$("#cn").onclick=()=>{edit=null;render()};
  if($("#sv"))$("#sv").onclick=()=>{
   const r=edit.id?S[k].find(x=>x.id===edit.id):{id:Date.now().toString(36)+Math.random().toString(36).slice(2,5)};
-  c.f.forEach(f=>{const v=$("#f_"+f[0]).value;r[f[0]]=f[2]==="num"?(v===""?"":+v):v});
+  c.f.forEach(f=>{const v=$("#f_"+f[0]).value;r[f[0]]=NUMT.includes(f[2])?(v===""?"":+v):v});
   if(!edit.id)S[k].push(r);
   persist(k);edit=null;render();
  };
@@ -249,6 +280,149 @@ function crud(k){
   if(b.textContent!=="Yakin?"){b.textContent="Yakin?";setTimeout(()=>{b.textContent="Hapus"},3000);return}
   S[k]=S[k].filter(x=>x.id!==b.dataset.x);persist(k);render();
  });
+}
+
+const LAPKEY={rep_ig:[["views","Tayangan"],["reach","Pemirsa"],["inter","Interaksi"],["engaged","Akun berinteraksi"],["visits","Kunjungan profil"],["linktap","Ketukan tautan"],["followers","Pengikut"]],rep_tt:[["views","Tayangan video"],["profile","Tampilan profil"],["likes","Suka"],["comments","Komentar"],["shares","Bagikan"],["viewers","Total penonton"],["newviewers","Penonton baru"],["followers","Jumlah pengikut"]]};
+const LAPHELP={rep_ig:"Ambil dari aplikasi Instagram: Dasbor profesional → Insight akun → pilih rentang (7/14/30/90 hari). Isi angkanya di sini, dan isi Tgl akhir periode dengan tanggal terakhir dari rentang itu.",rep_tt:"Ambil dari TikTok Studio → Analitik: tab Ikhtisar (tayangan, tampilan profil, suka, komentar, bagikan, reward), Pemirsa (total & penonton baru), Pengikut (jumlah & neto). Pilih rentang yang sama di semua tab."};
+function laporan(){
+ const k=lapSub,R=(S[k]||[]).slice().sort((a,b)=>(b.end||"").localeCompare(a.end||""));
+ const sub=`<div class="card"><div class="row" style="gap:8px"><button class="b ${k==="rep_ig"?"p":""}" data-lap="rep_ig">Instagram</button><button class="b ${k==="rep_tt"?"p":""}" data-lap="rep_tt">TikTok</button><span class="note grow" style="min-width:220px">${LAPHELP[k]}</span></div></div>`;
+ let sum="";
+ if(R.length){
+  const a=R[0],b=R.find((x,i)=>i>0&&x.per===a.per);
+  sum=`<div class="card"><div class="dash-title"><h2>Laporan terbaru • ${esc(a.per||"")} s.d. ${dmy(a.end)}</h2><span class="note">${b?"dibanding periode "+esc(b.per)+" s.d. "+dmy(b.end):"belum ada periode sebelumnya dengan panjang yang sama"}</span></div><div class="lapgrid">`+LAPKEY[k].map(([f,l])=>{
+   const v=a[f],pv=b?b[f]:null;let ch="";
+   if(b&&pv!==""&&pv!=null&&v!==""&&v!=null&&+pv!==0){const d=(v-pv)/Math.abs(pv)*100;ch=`<span class="${d>=0?"up":"down"}">${d>=0?"▲":"▼"} ${Math.abs(d).toFixed(1)}%</span>`}
+   return `<div class="lapbox"><span class="note">${l}</span><b>${v===""||v==null?"–":n0(v)}</b>${ch}</div>`}).join("")+`</div></div>`;
+ }
+ crud(k,sub+sum);
+ document.querySelectorAll("[data-lap]").forEach(b=>b.onclick=()=>{lapSub=b.dataset.lap;edit=null;render()});
+}
+/* ---------- impor massal CSV / Excel ---------- */
+const IMPF=[["title","Judul / caption"],["link","Link postingan"],["pub","Tgl tayang"],["format","Jenis / format"],["views","Views / tayangan"],["likes","Likes / suka"],["comments","Komentar"],["shares","Share / bagikan"],["saves","Saves / simpan"]];
+const IMPSYN={
+ title:["description","deskripsi","caption","keterangan","judul","title","video title","judul video","teks","postingan"],
+ link:["permalink","tautan permanen","video link","tautan video","link","tautan","url"],
+ pub:["publish time","waktu publikasi","waktu dipublikasikan","waktu diterbitkan","post time","waktu posting","create time","created time","date posted","tanggal posting","tanggal publikasi","tanggal diunggah","tanggal","date","waktu"],
+ format:["post type","jenis postingan","jenis konten","content type","media type","type","jenis","format"],
+ views:["views","tayangan","video views","tayangan video","total views","plays","diputar","impressions","impresi","reach","jangkauan"],
+ likes:["likes","suka","total likes","reactions","reaksi","likes and reactions"],
+ comments:["comments","komentar","total comments"],
+ shares:["shares","bagikan","dibagikan","total shares","share"],
+ saves:["saves","simpan","disimpan","favorites","favorit","add to favorites"]
+};
+const normH=h=>String(h||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+function impGuess(headers){
+ const H=headers.map(normH),used=new Set(),map={};
+ IMPF.forEach(([f])=>{
+  let idx=-1;const syn=IMPSYN[f];
+  for(const sy of syn){idx=H.findIndex((h,i)=>!used.has(i)&&h===sy);if(idx>=0)break}
+  if(idx<0)for(const sy of syn){if(sy.length<4)continue;idx=H.findIndex((h,i)=>!used.has(i)&&!/\bid\b/.test(h)&&(h.startsWith(sy+" ")||h.endsWith(" "+sy)||h.includes(" "+sy+" ")));if(idx>=0)break}
+  if(idx>=0){used.add(idx);map[f]=idx}else map[f]=-1;
+ });
+ return map;
+}
+function toNum(v){
+ if(typeof v==="number")return v;
+ let t=String(v==null?"":v).trim().toLowerCase().replace(/\s/g,"");if(!t||t==="-")return "";
+ let mul=1;const m=t.match(/(k|rb|m|jt)$/);if(m){mul=m[1]==="k"||m[1]==="rb"?1e3:1e6;t=t.slice(0,-m[1].length)}
+ if(mul===1&&/^-?\d{1,3}([.,]\d{3})+$/.test(t))t=t.replace(/[.,]/g,"");else t=t.replace(/,/g,".");
+ const n=parseFloat(t);return isNaN(n)?"":Math.round(n*mul);
+}
+const MON={jan:1,feb:2,mar:3,apr:4,mei:5,may:5,jun:6,jul:7,agu:8,agt:8,aug:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
+function toDate(v,fmt){
+ if(v==null||v==="")return "";
+ if(v instanceof Date&&!isNaN(v))return ymd(v.getFullYear(),v.getMonth()+1,v.getDate());
+ if(typeof v==="number"&&window.XLSX){const d=XLSX.SSF.parse_date_code(v);return d?ymd(d.y,d.m,d.d):""}
+ const t=String(v).trim();let m;
+ if(m=t.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})/))return ymd(+m[1],+m[2],+m[3]);
+ if(m=t.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/)){let a=+m[1],b=+m[2],y=+m[3];if(y<100)y+=2000;const dmyF=fmt==="dmy"||(fmt!=="mdy"&&a>12);return dmyF?ymd(y,b,a):ymd(y,a,b)}
+ if(m=t.match(/^(\d{1,2})\s+([a-z]{3})[a-z]*\.?\s+(\d{4})/i)){const mo=MON[m[2].toLowerCase()];if(mo)return ymd(+m[3],mo,+m[1])}
+ if(m=t.match(/^([a-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/i)){const mo=MON[m[1].toLowerCase()];if(mo)return ymd(+m[3],mo,+m[2])}
+ return "";
+}
+function impDetectFmt(col){
+ for(const v of col){const m=String(v||"").trim().match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.]\d{2,4}/);if(m){if(+m[1]>12)return "dmy";if(+m[2]>12)return "mdy"}}
+ return "mdy";
+}
+function impFormat(v,platform){
+ const t=String(v||"").toLowerCase();
+ if(/reel|video|short/.test(t))return FM[0];
+ if(/carousel|image|foto|photo|gambar|feed|album|post/.test(t))return FM[1];
+ if(/story|cerita/.test(t))return FM[2];
+ if(/live/.test(t))return FM[5];
+ return platform==="TikTok"?FM[0]:"";
+}
+function loadXLSX(){
+ if(window.XLSX)return Promise.resolve();
+ return new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";sc.onload=ok;sc.onerror=()=>no(new Error("Library Excel gagal dimuat. Periksa koneksi internet."));document.head.appendChild(sc)});
+}
+async function impRead(file){
+ await loadXLSX();
+ const isCsv=/\.(csv|txt)$/i.test(file.name);
+ const wb=isCsv?XLSX.read((await file.text()).replace(/^\uFEFF/,""),{type:"string",cellDates:true}):XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:true});
+ const ws=wb.Sheets[wb.SheetNames[0]],A=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:""});
+ let hi=A.findIndex(r=>r.filter(c=>typeof c==="string"&&/[a-z]/i.test(c)).length>=3);if(hi<0)hi=0;
+ const headers=(A[hi]||[]).map((h,i)=>String(h||"Kolom "+(i+1)).trim());
+ const data=A.slice(hi+1).filter(r=>r.some(c=>c!==""&&c!=null));
+ return {headers,data,sheet:wb.SheetNames[0]};
+}
+function impBuild(){
+ const {headers,data,map,platform,fmt,from,to}=imp,get=(r,f)=>map[f]>=0?r[map[f]]:"";
+ const out=[];
+ data.forEach(r=>{
+  let title=String(get(r,"title")||"").split(/\r?\n/)[0].trim(),link=String(get(r,"link")||"").trim();
+  if(title.length>150)title=title.slice(0,147)+"…";
+  const pub=toDate(get(r,"pub"),fmt);
+  if(from&&(!pub||pub<from))return;if(to&&(!pub||pub>to))return;
+  if(!title&&!link&&!pub)return;
+  out.push({title:title||link||"(tanpa judul)",link,pub,format:impFormat(get(r,"format"),platform),views:toNum(get(r,"views")),likes:toNum(get(r,"likes")),comments:toNum(get(r,"comments")),shares:toNum(get(r,"shares")),saves:toNum(get(r,"saves"))});
+ });
+ return out;
+}
+function importView(k){
+ const I=imp;if(!I.platform)I.platform="Instagram";if(I.toT==null){I.toT=true;I.toI=true}if(!I.idate)I.idate=today();
+ let h=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">⇪ Impor konten dari CSV / Excel</h2><button class="b" id="ix">← Kembali</button></div>
+ <p class="note">Unggah file ekspor dari <b>Meta Business Suite</b> (Instagram) atau <b>TikTok Studio</b>. Kolom akan dicocokkan otomatis, dan bisa diperbaiki sebelum diimpor. Konten yang sudah ada (link atau judul + tanggal sama) tidak akan digandakan.</p>
+ <div class="form"><label>Platform<select id="i_pl">${PL.map(p=>`<option ${p===I.platform?"selected":""}>${p}</option>`).join("")}</select></label>
+ <label>File (.csv / .xlsx)<input type="file" id="i_file" accept=".csv,.xlsx,.xls"></label></div>`;
+ if(I.err)h+=`<p class="note" style="color:#ff8ca5">${esc(I.err)}</p>`;
+ if(I.headers){
+  const rows=impBuild();
+  h+=`<p class="note">File: <b>${esc(I.name)}</b> • ${I.data.length} baris data terbaca.</p><h2 style="margin-top:14px">1. Cocokkan kolom</h2><div class="form">`+IMPF.map(([f,l])=>`<label>${l}<select data-im="${f}"><option value="-1">— tidak ada —</option>${I.headers.map((x,i)=>`<option value="${i}" ${I.map[f]===i?"selected":""}>${esc(x)}</option>`).join("")}</select></label>`).join("")+`</div>
+  <h2 style="margin-top:14px">2. Pengaturan</h2><div class="form">
+  <label>Format tanggal di file<select id="i_fmt"><option value="mdy" ${I.fmt==="mdy"?"selected":""}>Bulan/Hari/Tahun (ekspor Meta)</option><option value="dmy" ${I.fmt==="dmy"?"selected":""}>Hari/Bulan/Tahun</option></select></label>
+  <label>Hanya tayang mulai<input type="date" id="i_from" value="${I.from||""}"></label><label>sampai<input type="date" id="i_to" value="${I.to||""}"></label>
+  <label>Tgl ambil data (Insight)<input type="date" id="i_idate" value="${I.idate}"></label>
+  <label style="flex-direction:row;align-items:center;gap:6px;display:flex"><input type="checkbox" id="i_toT" style="width:18px;height:18px" ${I.toT?"checked":""}> Masukkan ke Tracker</label>
+  <label style="flex-direction:row;align-items:center;gap:6px;display:flex"><input type="checkbox" id="i_toI" style="width:18px;height:18px" ${I.toI?"checked":""}> Masukkan ke Insight</label></div>
+  <h2 style="margin-top:14px">3. Pratinjau (${rows.length} konten siap diimpor)</h2><div class="scroll"><table><tr><th>Tgl tayang</th><th>Judul</th><th>Format</th><th class="r">Views</th><th class="r">Likes</th><th class="r">Komentar</th><th class="r">Share</th><th class="r">Saves</th></tr>`+
+  rows.slice(0,8).map(r=>`<tr><td>${r.pub?dmy(r.pub):'<span style="color:#ff8ca5">?</span>'}</td><td class="wrap">${esc(r.title)}</td><td>${esc(r.format)}</td><td class="r">${n0(r.views)}</td><td class="r">${n0(r.likes)}</td><td class="r">${n0(r.comments)}</td><td class="r">${n0(r.shares)}</td><td class="r">${n0(r.saves)}</td></tr>`).join("")+`</table></div>`+(rows.length>8?`<p class="note">…dan ${rows.length-8} konten lainnya.</p>`:"")+
+  `<div class="row" style="margin-top:12px"><button class="b p" id="i_go" ${rows.length?"":"disabled"}>Impor ${rows.length} konten</button></div>`;
+ }
+ $("#main").innerHTML=h+`</div>`;
+ $("#ix").onclick=()=>{imp=null;render()};
+ $("#i_pl").onchange=e=>{I.platform=e.target.value;render()};
+ $("#i_file").onchange=async e=>{const f=e.target.files[0];if(!f)return;I.err="";
+  try{const R=await impRead(f);if(!R.data.length)throw new Error("File tidak berisi baris data.");Object.assign(I,R,{name:f.name,map:impGuess(R.headers)});const pi=I.map.pub;I.fmt=impDetectFmt(pi>=0?R.data.map(r=>r[pi]):[]);}
+  catch(x){console.error(x);I.err="Gagal membaca file: "+(x.message||x)}
+  render()};
+ document.querySelectorAll("[data-im]").forEach(s=>s.onchange=()=>{I.map[s.dataset.im]=+s.value;render()});
+ [["i_fmt","fmt"],["i_from","from"],["i_to","to"],["i_idate","idate"]].forEach(([id,key])=>{const el=$("#"+id);if(el)el.onchange=()=>{I[key]=el.value;render()}});
+ [["i_toT","toT"],["i_toI","toI"]].forEach(([id,key])=>{const el=$("#"+id);if(el)el.onchange=()=>{I[key]=el.checked}});
+ if($("#i_go"))$("#i_go").onclick=()=>{
+  const rows=impBuild(),pl=I.platform,cl=u=>String(u||"").replace(/[?#].*$/,"").replace(/\/$/,""),key=r=>r.link?"L|"+cl(r.link):"T|"+r.title+"|"+r.pub;
+  const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  let addT=0,skipT=0,addI=0,updI=0;
+  if(I.toT){const have=new Set(S.tracker.filter(r=>r.platform===pl).map(key));
+   rows.forEach(r=>{const kk=key(r);if(have.has(kk)){skipT++;return}have.add(kk);S.tracker.push({id:nid(),title:r.title,platform:pl,format:r.format,pillar:"",status:"Tayang",prod:r.pub,pub:r.pub,pic:"",link:r.link});addT++});
+   persist("tracker")}
+  if(I.toI){rows.forEach(r=>{const ex=S.insight.find(x=>x.platform===pl&&((r.link&&cl(x.link)===cl(r.link))||(x.title===r.title&&x.pub===r.pub)));
+    const vals={date:I.idate,views:r.views,likes:r.likes,comments:r.comments,shares:r.shares,saves:r.saves};
+    if(ex){Object.assign(ex,vals);updI++}else{S.insight.push(Object.assign({id:nid(),platform:pl,title:r.title,link:r.link,pub:r.pub},vals));addI++}});
+   persist("insight")}
+  imp=null;flashMsg=(`✓ Impor selesai: ${addT} konten baru di Tracker${skipT?` (${skipT} sudah ada, dilewati)`:""} • Insight: ${addI} baru, ${updI} diperbarui`);render();
+ };
 }
 const ptg=p=>{const t=S.settings.pt;return t&&t[p[0]]!=null?+t[p[0]]:p[1]};
 function pil(){
@@ -283,7 +457,7 @@ function settings(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download="cadangan-sosmed-"+today()+".json";a.click();URL.revokeObjectURL(url);$("#bk").textContent="Cadangan berhasil diunduh.";
  };
- $("#im").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const v=JSON.parse(r.result);["settings","tracker","insight","followers","prodi"].forEach(k=>{if(v[k]){S[k]=v[k];persist(k)}});$("#bk").textContent="Data berhasil dipulihkan."}catch(x){$("#bk").textContent="File cadangan tidak valid."}};r.readAsText(f)};
+ $("#im").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const v=JSON.parse(r.result);DATA_KEYS.forEach(k=>{if(v[k]){S[k]=v[k];persist(k)}});$("#bk").textContent="Data berhasil dipulihkan."}catch(x){$("#bk").textContent="File cadangan tidak valid."}};r.readAsText(f)};
 }
 init();
 </script>
