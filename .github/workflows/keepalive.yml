@@ -18,5 +18,4 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           curl -fsS "$SUPABASE_URL/rest/v1/app_data?select=data_key&limit=1" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY"
+            -H "apikey: $SUPABASE_ANON_KEY"
