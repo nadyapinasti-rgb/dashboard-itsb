@@ -408,7 +408,7 @@ function importView(k){
   catch(x){console.error(x);I.err="Gagal membaca file: "+(x.message||x)}
   render()};
  document.querySelectorAll("[data-im]").forEach(s=>s.onchange=()=>{I.map[s.dataset.im]=+s.value;render()});
- [["i_fmt","fmt"],["i_from","from"],["i_to","to"],["i_idate","idate"]].forEach(([id,key])=>{const el=$("#"+id);if(el)el.onchange=()=>{I[key]=el.value;render()}});
+ [["i_fmt","fmt"],["i_from","from"],["i_to","to"],["i_idate","idate"]].forEach(([id,key])=>{const el=$("#"+id);if(!el)return;const apply=()=>{const v=el.value;if(el.type==="date"&&v&&+v.slice(0,4)<1900)return;if(I[key]===v)return;I[key]=v;render()};el.onchange=apply;el.onblur=apply});
  [["i_toT","toT"],["i_toI","toI"]].forEach(([id,key])=>{const el=$("#"+id);if(el)el.onchange=()=>{I[key]=el.checked}});
  if($("#i_go"))$("#i_go").onclick=()=>{
   const rows=impBuild(),pl=I.platform,cl=u=>String(u||"").replace(/[?#].*$/,"").replace(/\/$/,""),key=r=>r.link?"L|"+cl(r.link):"T|"+r.title+"|"+r.pub;
