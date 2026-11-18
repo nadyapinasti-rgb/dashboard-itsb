@@ -47,6 +47,14 @@ header .search{width:250px;white-space:nowrap;overflow:hidden;text-overflow:elli
 .kd-h{font-size:12px;margin:4px 0 8px;color:#cfe3ff}
 .kd-row{display:grid;grid-template-columns:minmax(90px,1.3fr) 1.6fr 34px;gap:8px;align-items:center;font-size:11px;margin-bottom:7px;line-height:1.3}.kd-row b{text-align:right}.kd-row .bar{margin:0}
 @media(max-width:600px){.kpidetail{padding:12px}}
+
+/* Filter Content Tracker & Analytics */
+.ftbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 4px}
+.ftbar select,.ftbar input[type=text],.ftbar input[type=date]{min-width:0;padding:7px 9px;font-size:12px}
+.ftbar input[type=text]{flex:1 1 160px}
+.ftbar .ftd{display:flex;align-items:center;gap:6px;font-size:11px;color:#a9c4e8;flex-direction:row}
+td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;cursor:pointer}
+.ro [data-sel],.ro #selall{display:none}
 /* Pencarian, tempat sampah & notifikasi */
 .qfbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;padding:8px 12px;border:1px solid #2864a4;border-radius:10px;background:#0a2a5a80;font-size:12px;color:#cfe3ff}
 tr.hl td{background:#1c8cff2e!important}tr.hl td:first-child{box-shadow:inset 3px 0 #1c9cff}
@@ -112,7 +120,7 @@ const TS=["Belum","Proses","Selesai"],TP=["Tinggi","Sedang","Rendah"];
 const PER_IG=["7 hari","14 hari","30 hari","90 hari","Kustom"],PER_TT=["7 hari","28 hari","60 hari","365 hari","Kustom"];
 const now=new Date();
 let S={settings:{year:now.getFullYear(),tp:2,tpub:2,tf:10000},tracker:[],insight:[],followers:[],prodi:[],todo:[],rep_ig:[],rep_tt:[],trash:[]};
-let fsv2={},lapSub="rep_ig",imp=null,flashMsg="",QF={},HL=null,kpiOpen=null;
+let fsv2={},lapSub="rep_ig",imp=null,flashMsg="",QF={},HL=null,kpiOpen=null,FT={},SEL={},ftFocus=null;
 let tab="dash",cal={y:now.getFullYear(),m:now.getMonth()+1},edit=null,fsv="",charts=[],db=null,uid=null,q=Promise.resolve(),sb=null,workspaceId=null,realtimeChannel=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -303,14 +311,17 @@ function crud(k,pre=""){
    const inp=f[2]==="sel"?`<select id="${id}">${f[3].map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${NUMT.includes(f[2])?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':f[2]==="dec"||f[2]==="usd"?'min="0" step="any" inputmode="decimal"':f[2]==="int"?'step="1"':""} value="${esc(v)}">`;
    return `<label>${f[1]}${inp}</label>`}).join("")+`</div><div class="row" style="margin-top:12px"><button class="b p" id="sv">Simpan</button><button class="b" id="cn">Batal</button></div></div>`;
  }
- h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (${S[k].length})</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"?`<button class="b" id="ipt">Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div>${QF[k]?`<div class="qfbar">Menampilkan hasil pencarian “${esc(QF[k])}” <button class="l" id="qf_x">Tampilkan semua</button></div>`:""}<div class="scroll"><table><tr>`+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
+ const FX=(k==="tracker"||k==="insight");if(FX){FT[k]=FT[k]||{};SEL[k]=SEL[k]||new Set()}
+ h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (<span id="cnt">${S[k].length}</span>)</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"?`<button class="b" id="ipt">Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div>${FX?filterBar(k):""}${QF[k]?`<div class="qfbar">Menampilkan hasil pencarian “${esc(QF[k])}” <button class="l" id="qf_x">Tampilkan semua</button></div>`:""}<div id="bulk"></div><div class="scroll"><table><tr>`+(FX?`<th style="width:28px"><input type="checkbox" id="selall" title="Pilih semua yang tampil"></th>`:"")+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
  const fs=k==="tracker"?fsv:"",fs2=c.filt?fsv2[k]||"":"";
  let rows=S[k].filter(r=>(!fs||r.status===fs)&&(!fs2||r[c.filt[0]]===fs2)).slice().sort((a,b)=>(b[c.sort]||"")<(a[c.sort]||"")?-1:1);
  if(c.asc)rows=rows.reverse().sort((a,b)=>(a.status==="Selesai")-(b.status==="Selesai")||(!a.due)-(!b.due));
  if(QF[k])rows=rows.filter(r=>rowHay(r).includes(QF[k]));
- rows.forEach(r=>h+=`<tr${HL===r.id?' class="hl" id="hlrow"':""}>`+c.cols.map(x=>`<td class="${isR(k,x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td style="white-space:nowrap">${k==="todo"&&r.status!=="Selesai"?`<button class="l" data-done="${r.id}">Selesai</button>`:""}<button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
- if(!rows.length)h+=`<tr><td colspan="${c.cols.length+1}" class="note">Belum ada data. Klik “+ Tambah”.</td></tr>`;
+ if(FX)rows=ftApply(k,rows);
+ rows.forEach(r=>h+=`<tr${HL===r.id?' class="hl" id="hlrow"':""}>`+(FX?`<td><input type="checkbox" data-sel="${r.id}" ${SEL[k].has(r.id)?"checked":""}></td>`:"")+c.cols.map(x=>`<td class="${isR(k,x)?"r":x==="title"?"wrap":""}">${cell(k,r,x)}</td>`).join("")+`<td style="white-space:nowrap">${k==="todo"&&r.status!=="Selesai"?`<button class="l" data-done="${r.id}">Selesai</button>`:""}<button class="l" data-e="${r.id}">Ubah</button><button class="l" data-x="${r.id}">Hapus</button></td></tr>`);
+ if(!rows.length)h+=`<tr><td colspan="${c.cols.length+(FX?2:1)}" class="note">${S[k].length?"Tidak ada data yang cocok dengan filter.":"Belum ada data. Klik “+ Tambah”."}</td></tr>`;
  $("#main").innerHTML=h+`</table></div></div>`;
+ if(FX){if(rows.length!==S[k].length)$("#cnt").textContent=rows.length+" dari "+S[k].length;bindFilter(k,rows)}
  $("#ad").onclick=()=>{edit={k,id:null};render()};
  if($("#fs"))$("#fs").onchange=e=>{fsv=e.target.value;render()};
  if($("#qf_x"))$("#qf_x").onclick=()=>{QF[k]="";HL=null;render()};
@@ -564,6 +575,48 @@ function toast(msg,action,fn){
  if(action)$("#toast_b").onclick=()=>{fn();t.className=""};
  clearTimeout(toast.h);toast.h=setTimeout(()=>{t.className=""},8000);
 }
+
+/* ---------- filter & pilih banyak (Content Tracker, Analytics) ---------- */
+function ftApply(k,rows){
+ const f=FT[k]||{};
+ return rows.filter(r=>(!f.pl||r.platform===f.pl)&&(!f.pil||r.pillar===f.pil||(f.pil==="(kosong)"&&!r.pillar))&&(!f.fmt||r.format===f.fmt)&&(!f.pic||(r.pic||"")===f.pic)
+  &&(!f.from||(r.pub&&r.pub>=f.from))&&(!f.to||(r.pub&&r.pub<=f.to))&&(!f.q||rowHay(r).includes(f.q.toLowerCase())));
+}
+function filterBar(k){
+ const f=FT[k],opt=(arr,v,all)=>`<option value="">${all}</option>`+arr.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("");
+ const pics=[...new Set(S.tracker.map(r=>r.pic||"").filter(Boolean))].sort();
+ const active=Object.values(f).some(v=>v);
+ return `<div class="ftbar">`+
+  `<select data-ft="pl">${opt(PL,f.pl,"Semua platform")}</select>`+
+  (k==="tracker"?`<select data-ft="pil">${opt(PN.concat(["(kosong)"]),f.pil,"Semua pilar")}</select><select data-ft="fmt">${opt(FM,f.fmt,"Semua format")}</select><select data-ft="pic">${opt(pics,f.pic,"Semua PIC")}</select>`:"")+
+  `<label class="ftd">Tayang dari<input type="date" data-ft="from" value="${f.from||""}"></label><label class="ftd">sampai<input type="date" data-ft="to" value="${f.to||""}"></label>`+
+  `<input type="text" data-ft="q" placeholder="Cari di tabel ini…" value="${esc(f.q||"")}">`+
+  (active?`<button class="l" id="ft_x">Reset filter</button>`:"")+`</div>`;
+}
+function bindFilter(k,rows){
+ document.querySelectorAll("[data-ft]").forEach(el=>{
+  const key=el.dataset.ft;
+  const apply=()=>{const v=el.value;if(el.type==="date"&&v&&+v.slice(0,4)<1900)return;if((FT[k][key]||"")===v)return;FT[k][key]=v;SEL[k].clear();ftFocus=key==="q"?{key,pos:el.selectionStart}:null;render()};
+  if(key==="q"){let t;el.oninput=()=>{clearTimeout(t);t=setTimeout(apply,250)}}else{el.onchange=apply;if(el.type==="date")el.onblur=apply}
+ });
+ if(ftFocus){const el=document.querySelector(`[data-ft="${ftFocus.key}"]`);if(el){el.focus();try{el.setSelectionRange(ftFocus.pos,ftFocus.pos)}catch(e){}}ftFocus=null}
+ if($("#ft_x"))$("#ft_x").onclick=()=>{FT[k]={};SEL[k].clear();render()};
+ const ids=rows.map(r=>r.id),sa=$("#selall");
+ const bulk=()=>{const n=SEL[k].size;sa.checked=n>0&&ids.every(i=>SEL[k].has(i));sa.indeterminate=n>0&&!sa.checked;
+  $("#bulk").innerHTML=n&&!isViewer()?`<div class="qfbar"><b>${n}</b> data dipilih <button class="l" id="bk_del">Hapus terpilih</button><button class="l" id="bk_x">Batal pilih</button></div>`:"";
+  if($("#bk_x"))$("#bk_x").onclick=()=>{SEL[k].clear();render()};
+  if($("#bk_del"))$("#bk_del").onclick=e=>{const b=e.target;if(b.textContent!=="Yakin? Hapus "+n){b.textContent="Yakin? Hapus "+n;setTimeout(()=>{if(b.isConnected)b.textContent="Hapus terpilih"},3000);return}trashMany(k,[...SEL[k]]);SEL[k].clear()}};
+ sa.onchange=()=>{if(sa.checked)ids.forEach(i=>SEL[k].add(i));else ids.forEach(i=>SEL[k].delete(i));document.querySelectorAll("[data-sel]").forEach(c=>c.checked=SEL[k].has(c.dataset.sel));bulk()};
+ document.querySelectorAll("[data-sel]").forEach(c=>c.onchange=()=>{if(c.checked)SEL[k].add(c.dataset.sel);else SEL[k].delete(c.dataset.sel);bulk()});
+ bulk();
+}
+function trashMany(k,ids){
+ const set=new Set(ids),rows=S[k].filter(x=>set.has(x.id));if(!rows.length)return;
+ S[k]=S[k].filter(x=>!set.has(x.id));const now=Date.now();
+ rows.forEach((r,i)=>S.trash.unshift({tid:r.id+"-"+now.toString(36)+i,k,row:r,at:now}));
+ UNDO.push({type:"delmany",k,ids:rows.map(r=>r.id)});persist(k);persist("trash");render();
+ toast(`${rows.length} data dipindahkan ke Tempat Sampah.`,"Batalkan",undo);
+}
 function trashRow(k,id){
  const r=S[k].find(x=>x.id===id);if(!r)return;
  S[k]=S[k].filter(x=>x.id!==id);S.trash.unshift({tid:id+"-"+Date.now().toString(36),k,row:r,at:Date.now()});
@@ -581,7 +634,8 @@ function restoreTrash(tid,quiet){
 function undo(){
  if(isViewer())return;
  const u=UNDO.pop();if(!u){toast("Tidak ada perubahan untuk dibatalkan.");return}
- if(u.type==="del"){const t=S.trash.find(x=>x.k===u.k&&x.row.id===u.id);if(t){restoreTrash(t.tid,true);toast("Penghapusan dibatalkan.")}}
+ if(u.type==="delmany"){u.ids.forEach(id=>{const t=S.trash.find(x=>x.k===u.k&&x.row.id===id);if(t)restoreTrash(t.tid,true)});toast(u.ids.length+" data dikembalikan.")}
+ else if(u.type==="del"){const t=S.trash.find(x=>x.k===u.k&&x.row.id===u.id);if(t){restoreTrash(t.tid,true);toast("Penghapusan dibatalkan.")}}
  else if(u.type==="edit"){const i=S[u.k].findIndex(x=>x.id===u.before.id);if(i>=0){S[u.k][i]=u.before;persist(u.k);toast("Perubahan dibatalkan.")}}
  else if(u.type==="add"){const r=S[u.k].find(x=>x.id===u.id);if(r){S[u.k]=S[u.k].filter(x=>x.id!==u.id);persist(u.k);toast("Data yang baru ditambahkan dibatalkan.")}}
  render();
