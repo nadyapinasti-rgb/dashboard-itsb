@@ -55,6 +55,7 @@ header .search{width:250px;white-space:nowrap;overflow:hidden;text-overflow:elli
 .ftbar .ftd{display:flex;align-items:center;gap:6px;font-size:11px;color:#a9c4e8;flex-direction:row}
 td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;cursor:pointer}
 .ro [data-sel],.ro #selall{display:none}
+.befrm{margin:8px 0 4px;padding:12px 14px}.befrm .form{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
 /* Pencarian, tempat sampah & notifikasi */
 .qfbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;padding:8px 12px;border:1px solid #2864a4;border-radius:10px;background:#0a2a5a80;font-size:12px;color:#cfe3ff}
 tr.hl td{background:#1c8cff2e!important}tr.hl td:first-child{box-shadow:inset 3px 0 #1c9cff}
@@ -120,7 +121,7 @@ const TS=["Belum","Proses","Selesai"],TP=["Tinggi","Sedang","Rendah"];
 const PER_IG=["7 hari","14 hari","30 hari","90 hari","Kustom"],PER_TT=["7 hari","28 hari","60 hari","365 hari","Kustom"];
 const now=new Date();
 let S={settings:{year:now.getFullYear(),tp:2,tpub:2,tf:10000},tracker:[],insight:[],followers:[],prodi:[],todo:[],rep_ig:[],rep_tt:[],trash:[]};
-let fsv2={},lapSub="rep_ig",imp=null,flashMsg="",QF={},HL=null,kpiOpen=null,FT={},SEL={},ftFocus=null;
+let fsv2={},lapSub="rep_ig",imp=null,flashMsg="",QF={},HL=null,kpiOpen=null,FT={},SEL={},ftFocus=null,BE={};
 let tab="dash",cal={y:now.getFullYear(),m:now.getMonth()+1},edit=null,fsv="",charts=[],db=null,uid=null,q=Promise.resolve(),sb=null,workspaceId=null,realtimeChannel=null;
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -603,12 +604,34 @@ function bindFilter(k,rows){
  if($("#ft_x"))$("#ft_x").onclick=()=>{FT[k]={};SEL[k].clear();render()};
  const ids=rows.map(r=>r.id),sa=$("#selall");
  const bulk=()=>{const n=SEL[k].size;sa.checked=n>0&&ids.every(i=>SEL[k].has(i));sa.indeterminate=n>0&&!sa.checked;
-  $("#bulk").innerHTML=n&&!isViewer()?`<div class="qfbar"><b>${n}</b> data dipilih <button class="l" id="bk_del">Hapus terpilih</button><button class="l" id="bk_x">Batal pilih</button></div>`:"";
-  if($("#bk_x"))$("#bk_x").onclick=()=>{SEL[k].clear();render()};
+  if(!n)BE[k]=false;
+  $("#bulk").innerHTML=n&&!isViewer()?`<div class="qfbar"><b>${n}</b> data dipilih <button class="l" id="bk_ed">${BE[k]?"Tutup ubah massal":"Ubah terpilih"}</button><button class="l" id="bk_del">Hapus terpilih</button><button class="l" id="bk_x">Batal pilih</button></div>`+(BE[k]?bulkForm(k,n):""):"";
+  if($("#bk_x"))$("#bk_x").onclick=()=>{SEL[k].clear();BE[k]=false;render()};
+  if($("#bk_ed"))$("#bk_ed").onclick=()=>{BE[k]=!BE[k];bulk()};
+  document.querySelectorAll("[data-be]").forEach(el=>el.oninput=el.onchange=()=>{if($("#be_msg"))$("#be_msg").textContent=""});
+  if($("#be_go"))$("#be_go").onclick=()=>{const ch={};document.querySelectorAll("[data-be]").forEach(el=>{const v=el.value.trim();if(v!=="")ch[el.dataset.be]=v});
+   if(!Object.keys(ch).length){$("#be_msg").textContent="Pilih minimal satu kolom yang ingin diubah.";return}
+   editMany(k,[...SEL[k]],ch);SEL[k].clear();BE[k]=false;render()};
   if($("#bk_del"))$("#bk_del").onclick=e=>{const b=e.target;if(b.textContent!=="Yakin? Hapus "+n){b.textContent="Yakin? Hapus "+n;setTimeout(()=>{if(b.isConnected)b.textContent="Hapus terpilih"},3000);return}trashMany(k,[...SEL[k]]);SEL[k].clear()}};
  sa.onchange=()=>{if(sa.checked)ids.forEach(i=>SEL[k].add(i));else ids.forEach(i=>SEL[k].delete(i));document.querySelectorAll("[data-sel]").forEach(c=>c.checked=SEL[k].has(c.dataset.sel));bulk()};
  document.querySelectorAll("[data-sel]").forEach(c=>c.onchange=()=>{if(c.checked)SEL[k].add(c.dataset.sel);else SEL[k].delete(c.dataset.sel);bulk()});
  bulk();
+}
+
+const BEF={tracker:[["platform","Platform",PL],["format","Format",FM],["pillar","Pilar konten",PN],["status","Status",ST],["pic","PIC",null]],insight:[["platform","Platform",PL],["date","Tgl ambil data","date"]]};
+function bulkForm(k,n){
+ const pics=[...new Set(S.tracker.map(r=>r.pic||"").filter(Boolean))].sort();
+ return `<div class="card befrm"><b>Ubah ${n} data sekaligus</b><span class="note"> Kolom yang dibiarkan “(tidak diubah)” atau kosong tetap seperti semula.</span><div class="form" style="margin-top:8px">`+
+  BEF[k].map(([f,l,o])=>`<label>${l}`+(Array.isArray(o)?`<select data-be="${f}"><option value="">(tidak diubah)</option>${o.map(x=>`<option>${esc(x)}</option>`).join("")}</select>`:o==="date"?`<input type="date" data-be="${f}">`:`<input type="text" data-be="${f}" list="be_pics" placeholder="(tidak diubah)"><datalist id="be_pics">${pics.map(p=>`<option value="${esc(p)}">`).join("")}</datalist>`)+`</label>`).join("")+
+  `</div><div class="row" style="margin-top:10px"><button class="b p" id="be_go">Terapkan ke ${n} data</button><span class="note" id="be_msg" style="color:#ffc766"></span></div></div>`;
+}
+function editMany(k,ids,ch){
+ const set=new Set(ids),before=[];
+ S[k].forEach(r=>{if(set.has(r.id)){before.push(JSON.parse(JSON.stringify(r)));Object.assign(r,ch)}});
+ if(!before.length)return;
+ UNDO.push({type:"editmany",k,before});persist(k);
+ const lbl=Object.keys(ch).map(f=>(BEF[k].find(x=>x[0]===f)||[f,f])[1]).join(", ");
+ setTimeout(()=>toast(`${before.length} data diperbarui (${lbl}).`,"Batalkan",undo),0);
 }
 function trashMany(k,ids){
  const set=new Set(ids),rows=S[k].filter(x=>set.has(x.id));if(!rows.length)return;
@@ -634,7 +657,8 @@ function restoreTrash(tid,quiet){
 function undo(){
  if(isViewer())return;
  const u=UNDO.pop();if(!u){toast("Tidak ada perubahan untuk dibatalkan.");return}
- if(u.type==="delmany"){u.ids.forEach(id=>{const t=S.trash.find(x=>x.k===u.k&&x.row.id===id);if(t)restoreTrash(t.tid,true)});toast(u.ids.length+" data dikembalikan.")}
+ if(u.type==="editmany"){u.before.forEach(b=>{const i=S[u.k].findIndex(x=>x.id===b.id);if(i>=0)S[u.k][i]=b});persist(u.k);toast(u.before.length+" perubahan dibatalkan.")}
+ else if(u.type==="delmany"){u.ids.forEach(id=>{const t=S.trash.find(x=>x.k===u.k&&x.row.id===id);if(t)restoreTrash(t.tid,true)});toast(u.ids.length+" data dikembalikan.")}
  else if(u.type==="del"){const t=S.trash.find(x=>x.k===u.k&&x.row.id===u.id);if(t){restoreTrash(t.tid,true);toast("Penghapusan dibatalkan.")}}
  else if(u.type==="edit"){const i=S[u.k].findIndex(x=>x.id===u.before.id);if(i>=0){S[u.k][i]=u.before;persist(u.k);toast("Perubahan dibatalkan.")}}
  else if(u.type==="add"){const r=S[u.k].find(x=>x.id===u.id);if(r){S[u.k]=S[u.k].filter(x=>x.id!==u.id);persist(u.k);toast("Data yang baru ditambahkan dibatalkan.")}}
