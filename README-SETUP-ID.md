@@ -1,6 +1,6 @@
 # SocialSync — Social Media Management Platform (ITSB)
 
-Dashboard tim marketing ITSB untuk merencanakan, mencatat, dan menganalisis konten media sosial (Instagram, TikTok, LinkedIn, YouTube, Facebook).
+Dashboard tim marketing ITSB untuk merencanakan, mencatat, dan menganalisis konten media sosial (Instagram, TikTok, dan LinkedIn; YouTube bisa diaktifkan di Settings). Facebook tidak dicatat terpisah karena kontennya mirroring dari Instagram.
 
 - **Hosting:** GitHub Pages (file statis `index.html`)
 - **Login & database:** Supabase Auth + PostgreSQL, dengan Row Level Security (RLS)
@@ -18,10 +18,10 @@ Dashboard tim marketing ITSB untuk merencanakan, mencatat, dan menganalisis kont
 | **My Tasks** | To-do tim: tugas, PIC, tenggat, prioritas, status |
 | **Content Tracker** | Daftar konten (ide → tayang), impor massal CSV/Excel/JSON |
 | **Analytics** | Performa per konten (views, likes, komentar, share, saves), impor massal |
-| **Reports** | Laporan akun berkala Instagram & TikTok (7/14/28/30/60/90/365 hari) + perbandingan periode |
+| **Reports** | Laporan akun berkala Instagram & TikTok (7/14/28/30/60/90/365 hari) + perbandingan periode, impor dari file |
 | **Audience** | Followers per platform + kalkulator hitung mundur |
 | **Programs** | Checklist video per prodi |
-| **Settings** | Target KPI, tanggal mulai pencatatan, Tempat Sampah, cadangan data |
+| **Settings** | Target KPI, tanggal mulai pencatatan, platform aktif, Tempat Sampah, cadangan data |
 
 Fitur umum: pencarian di header, **Tempat Sampah** (data terhapus disimpan 30 hari), **Batalkan / Ctrl+Z** untuk hapus/ubah/tambah terakhir, dan tampilan responsif (HP & laptop).
 
@@ -30,6 +30,12 @@ Fitur umum: pencarian di header, **Tempat Sampah** (data terhapus disimpan 30 ha
 - **TikTok:** aplikasi TikTok → Pengaturan dan privasi → Akun → Unduh data Anda (format **JSON**). Ekspor TikTok Studio hanya memuat sebagian konten.
 - **LinkedIn:** Analitik halaman → Ekspor (XLSX). Pilih sheet *POSTING POPULER* lalu *POSTING PALING BARU*.
 - Konten yang sudah ada (link sama, atau judul + tanggal sama) tidak digandakan.
+
+### Impor di menu Reports
+- **Instagram:** file ekspor insight Meta Business Suite (data harian, boleh beberapa file sekaligus). Data harian dijumlahkan; pengikut diambil dari nilai terakhir. Pemirsa dan akun yang berinteraksi tidak bisa dijumlahkan, jadi isi manual dari ringkasan periode.
+- **TikTok:** file TikTok Studio → Analitik → Unduh data (sheet ikhtisar dan pengikut harian). Pengikut neto = jumlah selisih harian.
+- **Rekap lama:** CSV/Excel dengan kolom *Tgl akhir periode*, *Periode*, dan angka laporan (satu baris = satu laporan).
+- Laporan dengan tanggal akhir dan periode yang sama diperbarui, bukan digandakan. Impor bisa dibatalkan dengan Ctrl+Z.
 
 ---
 
