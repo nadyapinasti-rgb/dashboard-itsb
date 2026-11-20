@@ -34,8 +34,8 @@ header .search{width:250px;white-space:nowrap;overflow:hidden;text-overflow:elli
 
 
 /* Mode viewer: sembunyikan semua aksi yang mengubah data */
-.ro #ad,.ro #ipt,.ro [data-e],.ro [data-x],.ro [data-done],.ro #sv,.ro #ss,.ro #im,.ro #tr_empty,.ro [data-rs],.ro [data-pd],.ro #fc_tg,.ro #i_go{display:none!important}
-.ro #main [data-c],.ro #main [data-t],.ro #main [data-pn],.ro #main #s_year,.ro #main #s_start,.ro #main #s_tp,.ro #main #s_tpub,.ro #main #s_tf,.ro #main [id^="s_pt"]{pointer-events:none;opacity:.75}
+.ro #ad,.ro #ipt,.ro [data-e],.ro [data-x],.ro [data-done],.ro #sv,.ro #ss,.ro #im,.ro #tr_empty,.ro [data-rs],.ro [data-pd],.ro #fc_tg,.ro #i_go,.ro #r_go{display:none!important}
+.ro #main [data-c],.ro #main [data-t],.ro #main [data-pn],.ro #main #s_year,.ro #main #s_start,.ro #main #s_tp,.ro #main #s_tpub,.ro #main #s_tf,.ro #main [id^="s_pt"],.ro #main [data-plt]{pointer-events:none;opacity:.75}
 .ro .day{cursor:default}
 .ro #main:before{content:"Anda masuk sebagai Viewer: bisa melihat semua data, tetapi tidak bisa menambah, mengubah, atau menghapus.";display:block;margin-bottom:12px;padding:9px 13px;border:1px solid #2864a4;border-radius:10px;background:#0a2a5a80;color:#cfe3ff;font-size:12px}
 /* Kartu ringkasan yang bisa diklik */
@@ -109,7 +109,8 @@ main{padding-top:124px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
 <script src="./config.js"></script>
 <script>
-const PL=["Instagram","TikTok","YouTube","LinkedIn","Facebook"];
+const PL_ALL=["Instagram","TikTok","YouTube","LinkedIn"],PL_DEF=["Instagram","TikTok","LinkedIn"],PL=PL_DEF.slice();
+const PC={Instagram:"#1c8cff",TikTok:"#22d6a0",YouTube:"#a85cff",LinkedIn:"#ffad2f"};
 const ST=["Ide","Produksi","Review","Terjadwal","Tayang","Batal"];
 const FM=["Reels / Video Pendek","Feed / Carousel","Story","Video Panjang","Artikel / Teks","Live"];
 const MN=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
@@ -140,6 +141,9 @@ const E={
  rep_tt:{label:"Laporan TikTok",f:[["end","Tgl akhir periode","date"],["per","Periode","sel",PER_TT],["views","Tayangan video","num"],["profile","Tampilan profil","num"],["likes","Suka","num"],["comments","Komentar","num"],["shares","Bagikan","num"],["reward","Perkiraan reward (USD)","usd"],["viewers","Total penonton","num"],["newviewers","Penonton baru","num"],["followers","Jumlah pengikut","num"],["net","Pengikut neto","int"],["note","Catatan","text"]],cols:["end","per","views","profile","likes","comments","shares","viewers","followers","net"],sort:"end",nodate:true}
 };
 const NUMT=["num","dec","int","usd"];
+/* platform aktif diatur di Settings; Facebook tidak dipakai karena kontennya mirroring dari Instagram */
+function applyPL(){const a=Array.isArray(S.settings.platforms)&&S.settings.platforms.length?S.settings.platforms:PL_DEF;PL.length=0;PL_ALL.forEach(p=>{if(a.includes(p))PL.push(p)});E.followers.f=[["date","Tanggal","date"]].concat(PL.map(p=>[p,p,"num"]));E.followers.cols=["date"].concat(PL,["total"])}
+applyPL();
 function isR(k,x){const f=E[k].f.find(y=>y[0]===x);return ["total","er"].includes(x)||(f&&NUMT.includes(f[2]))}
 const LBL={er:"Eng. rate",total:"Total"};
 function lab(k,c){const f=E[k].f.find(x=>x[0]===c);return f?f[1]:LBL[c]||c}
@@ -183,7 +187,7 @@ async function loadWorkspace(){
    if(old){try{const value=JSON.parse(old);if(key==="settings")S.settings=Object.assign(S.settings,value);else S[key]=value;await saveCloudKey(key,S[key]);}catch(e){console.warn("Legacy local data migration skipped",key,e)}}
   }
  }
- cal.y=S.settings.year;
+ cal.y=S.settings.year;applyPL();
  if(!Array.isArray(S.trash))S.trash=[];{const lim=Date.now()-30*864e5,n=S.trash.length;S.trash=S.trash.filter(t=>t.at>=lim);if(S.trash.length!==n)persist("trash")}
  setStoreStatus("Tersinkron ke workspace ITSB");
  render();
@@ -191,7 +195,7 @@ async function loadWorkspace(){
  realtimeChannel=sb.channel("itsb-dashboard-"+workspaceId).on("postgres_changes",{event:"*",schema:"public",table:"app_data",filter:"workspace_id=eq."+workspaceId},payload=>{
   const row=payload.new;if(!row||!DATA_KEYS.includes(row.data_key))return;
   S[row.data_key]=row.data_key==="settings"?Object.assign(S.settings,row.payload||{}):(row.payload??S[row.data_key]);
-  cal.y=S.settings.year;setStoreStatus("Data tim diperbarui");render();
+  cal.y=S.settings.year;applyPL();setStoreStatus("Data tim diperbarui");render();
  }).subscribe();
 }
 async function saveCloudKey(key,value){
@@ -268,7 +272,7 @@ function dash(){
  h+=`<div class="kpis">${stat("Konten Diproduksi",prod,prodTarget,"","prod","s.d. hari ini")}${stat("Konten Tayang",pub,pubTarget,"","pub","s.d. hari ini")}${stat("Penambahan Followers",folGain,folTarget,"","fol",act.length?"(sejak "+dmy(P.st).slice(0,5)+")":"")}${stat("Data Insight",S.insight.length,0,"","ins","")}${kpiOpen?`<div class="card kpidetail">${kpiDetail(kpiOpen,{D,last,act,P})}</div>`:""}</div>`;
  h+=`<div class="card content-performance"><div class="dash-title"><h2>Content Performance</h2><span class="note">${year}</span></div><div class="chartbox"><canvas id="c1"></canvas></div></div>`;
  h+=`<div class="card recent-activity"><div class="dash-title"><h2>Recent Activity</h2><span class="note">View all →</span></div>`;
- if(recent.length){recent.forEach((r,i)=>{h+=`<div class="activity"><div class="ico">${({Instagram:"IG",TikTok:"TT",LinkedIn:"LI",YouTube:"YT",Facebook:"FB"})[r.platform]||"–"}</div><div class="grow"><b>${esc(r.title||"Konten tanpa judul")}</b><small>${esc(r.platform||"Platform")} • ${r.pub?dmy(r.pub):r.prod?dmy(r.prod):"Belum ada tanggal"}</small></div><span class="pill ${r.status==="Tayang"?"t":r.status==="Batal"?"x":"s"}">${esc(r.status||"Ide")}</span></div>`})}else h+=`<div class="note" style="padding:20px 0">Belum ada aktivitas. Tambahkan konten melalui menu Content Tracker.</div>`;
+ if(recent.length){recent.forEach((r,i)=>{h+=`<div class="activity"><div class="ico">${({Instagram:"IG",TikTok:"TT",LinkedIn:"LI",YouTube:"YT"})[r.platform]||"–"}</div><div class="grow"><b>${esc(r.title||"Konten tanpa judul")}</b><small>${esc(r.platform||"Platform")} • ${r.pub?dmy(r.pub):r.prod?dmy(r.prod):"Belum ada tanggal"}</small></div><span class="pill ${r.status==="Tayang"?"t":r.status==="Batal"?"x":"s"}">${esc(r.status||"Ide")}</span></div>`})}else h+=`<div class="note" style="padding:20px 0">Belum ada aktivitas. Tambahkan konten melalui menu Content Tracker.</div>`;
  h+=`</div><div class="card monthly-overview"><div class="dash-title"><h2>Monthly Content Overview</h2><span class="note">${year}</span></div><div class="chartbox"><canvas id="c3"></canvas></div><div class="note">Perbandingan konten diproduksi dan ditayangkan</div></div>`;
  const FG=PL.map(p=>{let prev=null;const v=D.map(d=>{const x=d.fl&&d.fl[p]!==""&&d.fl[p]!=null?+d.fl[p]:null;if(x==null)return null;const g=prev==null?null:x-prev;prev=x;return g});return {p,v}}).filter(x=>x.v.some(v=>v!=null));
  const gi=FG.length?FG.map(x=>x.v.findIndex(v=>v!=null)).reduce((a,b)=>Math.min(a,b)):0,ge=FG.length?Math.max(...FG.map(x=>x.v.length-1-x.v.slice().reverse().findIndex(v=>v!=null))):0;
@@ -283,8 +287,8 @@ function dash(){
  const tx="#9db7df",gr="rgba(85,125,176,.16)",L=MN.map(m=>m.slice(0,3)),C=["#1c8cff","#22d6a0","#a85cff","#ffad2f","#ef4fc4"];
  const opt={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:tx,font:{size:10},boxWidth:9}}},scales:{x:{ticks:{color:tx,font:{size:9}},grid:{color:gr}},y:{ticks:{color:tx,font:{size:9}},grid:{color:gr},beginAtZero:true}}};
  charts.push(new Chart($("#c1"),{type:"line",data:{labels:L,datasets:[{label:"Diproduksi",data:D.map(d=>d.prod),borderColor:"#1c9cff",backgroundColor:"#1c9cff22",fill:true,tension:.35,pointRadius:2},{label:"Ditayangkan",data:D.map(d=>d.pub),borderColor:"#21d6a0",backgroundColor:"#21d6a022",fill:true,tension:.35,pointRadius:2}]},options:opt}));
- charts.push(new Chart($("#c2"),{type:"doughnut",data:{labels:PL,datasets:[{data:last.map(v=>v||0),backgroundColor:C,borderColor:"#07183f",borderWidth:3,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:tx,font:{size:9},boxWidth:8,padding:8}}},cutout:"62%"}}));
- if($("#c4"))charts.push(new Chart($("#c4"),{type:"bar",data:{labels:L.slice(gi,ge+1),datasets:FG.map(x=>({label:x.p,data:x.v.slice(gi,ge+1),backgroundColor:C[PL.indexOf(x.p)],borderRadius:4}))},options:{...opt,scales:{...opt.scales,x:{...opt.scales.x,offset:true}},plugins:{...opt.plugins,tooltip:{callbacks:{label:c=>c.dataset.label+": "+(c.raw>=0?"+":"")+n0(c.raw)}}}}}));
+ charts.push(new Chart($("#c2"),{type:"doughnut",data:{labels:PL,datasets:[{data:last.map(v=>v||0),backgroundColor:PL.map(p=>PC[p]),borderColor:"#07183f",borderWidth:3,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{color:tx,font:{size:9},boxWidth:8,padding:8}}},cutout:"62%"}}));
+ if($("#c4"))charts.push(new Chart($("#c4"),{type:"bar",data:{labels:L.slice(gi,ge+1),datasets:FG.map(x=>({label:x.p,data:x.v.slice(gi,ge+1),backgroundColor:PC[x.p],borderRadius:4}))},options:{...opt,scales:{...opt.scales,x:{...opt.scales.x,offset:true}},plugins:{...opt.plugins,tooltip:{callbacks:{label:c=>c.dataset.label+": "+(c.raw>=0?"+":"")+n0(c.raw)}}}}}));
  charts.push(new Chart($("#c3"),{type:"bar",data:{labels:L,datasets:[{label:"Diproduksi",data:D.map(d=>d.prod),backgroundColor:"#168bff",borderRadius:4},{label:"Ditayangkan",data:D.map(d=>d.pub),backgroundColor:"#a94dff",borderRadius:4}]},options:opt}));
 }
 function calendar(){
@@ -303,17 +307,17 @@ function calendar(){
 }
 function crud(k,pre=""){
  const c=E[k];let h=pre;
- if(imp&&imp.k===k){importView(k);return}
+ if(imp&&imp.k===k){(k.startsWith("rep_")?repImportView:importView)(k);return}
  if(flashMsg){h+=`<div class="card" style="border-color:#1fcd9260;color:#53e2b2">${esc(flashMsg)}</div>`;flashMsg=""}
  if(edit&&edit.k===k){
   const r=edit.id?S[k].find(x=>x.id===edit.id):Object.assign(c.nodate?{}:{date:today()},k==="todo"?{status:"Belum",prio:"Sedang"}:{},edit.pre||{});
   h+=`<div class="card"><h2>${edit.id?"Ubah":"Tambah"} ${c.label}</h2><div class="form">`+c.f.map(f=>{
    const v=r[f[0]]==null?"":r[f[0]],id="f_"+f[0];
-   const inp=f[2]==="sel"?`<select id="${id}">${f[3].map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${NUMT.includes(f[2])?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':f[2]==="dec"||f[2]==="usd"?'min="0" step="any" inputmode="decimal"':f[2]==="int"?'step="1"':""} value="${esc(v)}">`;
+   const opts=f[2]==="sel"&&v!==""&&!f[3].includes(v)?f[3].concat([v]):f[3];const inp=f[2]==="sel"?`<select id="${id}">${opts.map(o=>`<option ${o===(v||f[3][0])?"selected":""}>${esc(o)}</option>`).join("")}</select>`:`<input id="${id}" type="${NUMT.includes(f[2])?"number":f[2]==="date"?"date":"text"}" ${f[2]==="num"?'min="0" inputmode="numeric"':f[2]==="dec"||f[2]==="usd"?'min="0" step="any" inputmode="decimal"':f[2]==="int"?'step="1"':""} value="${esc(v)}">`;
    return `<label>${f[1]}${inp}</label>`}).join("")+`</div><div class="row" style="margin-top:12px"><button class="b p" id="sv">Simpan</button><button class="b" id="cn">Batal</button></div></div>`;
  }
  const FX=(k==="tracker"||k==="insight");if(FX){FT[k]=FT[k]||{};SEL[k]=SEL[k]||new Set()}
- h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (<span id="cnt">${S[k].length}</span>)</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"?`<button class="b" id="ipt">Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div>${FX?filterBar(k):""}${QF[k]?`<div class="qfbar">Menampilkan hasil pencarian “${esc(QF[k])}” <button class="l" id="qf_x">Tampilkan semua</button></div>`:""}<div id="bulk"></div><div class="scroll"><table><tr>`+(FX?`<th style="width:28px"><input type="checkbox" id="selall" title="Pilih semua yang tampil"></th>`:"")+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
+ h+=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">${c.label} (<span id="cnt">${S[k].length}</span>)</h2>`+(k==="tracker"?`<select id="fs"><option value="">Semua status</option>${ST.map(s=>`<option ${fsv===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(c.filt?`<select id="fs2"><option value="">Semua status</option>${c.filt[1].map(s=>`<option ${fsv2[k]===s?"selected":""}>${s}</option>`).join("")}</select>`:"")+(k==="tracker"||k==="insight"||k.startsWith("rep_")?`<button class="b" id="ipt">Impor CSV/Excel</button>`:"")+`<button class="b p" id="ad">+ Tambah</button></div>${FX?filterBar(k):""}${QF[k]?`<div class="qfbar">Menampilkan hasil pencarian “${esc(QF[k])}” <button class="l" id="qf_x">Tampilkan semua</button></div>`:""}<div id="bulk"></div><div class="scroll"><table><tr>`+(FX?`<th style="width:28px"><input type="checkbox" id="selall" title="Pilih semua yang tampil"></th>`:"")+c.cols.map(x=>`<th class="${isR(k,x)?"r":""}">${lab(k,x)}</th>`).join("")+`<th></th></tr>`;
  const fs=k==="tracker"?fsv:"",fs2=c.filt?fsv2[k]||"":"";
  let rows=S[k].filter(r=>(!fs||r.status===fs)&&(!fs2||r[c.filt[0]]===fs2)).slice().sort((a,b)=>(b[c.sort]||"")<(a[c.sort]||"")?-1:1);
  if(c.asc)rows=rows.reverse().sort((a,b)=>(a.status==="Selesai")-(b.status==="Selesai")||(!a.due)-(!b.due));
@@ -409,7 +413,7 @@ function impDetectFmt(col,platform){
  for(const v of col){const m=String(v||"").trim().match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.]\d{2,4}/);if(m){if(+m[1]>12)return "dmy";if(+m[2]>12)return "mdy"}}
  const fut=f=>col.filter(v=>{const d=toDate(v,f);return d&&d>today()}).length,a=fut("dmy"),b=fut("mdy");
  if(a!==b)return a<b?"dmy":"mdy";
- return platform==="Instagram"||platform==="Facebook"?"mdy":"dmy";
+ return platform==="Instagram"?"mdy":"dmy";
 }
 function impFormat(v,platform){
  const t=String(v||"").toLowerCase();
@@ -515,6 +519,109 @@ function importView(k){
  };
 }
 
+/* ---------- impor laporan akun (Reports) dari file ---------- */
+const REPSYN={
+ rep_ig:[["vig",["tayangan instagram","instagram views","views on instagram"]],["vfb",["tayangan facebook","facebook views","views on facebook"]],["vfol",["tayangan dari pengikut","views from followers"]],["ifol",["interaksi dari pengikut","interactions from followers"]],["linktap",["ketukan tautan eksternal","external link taps","link clicks","klik tautan","ketukan tautan","link taps"]],["addrtap",["ketukan alamat bisnis","business address taps"]],["visits",["kunjungan profil","profile visits","instagram profile visits","visits","kunjungan"]],["profact",["aktivitas profil","profile activity"]],["engaged",["akun yang berinteraksi","accounts engaged","akun berinteraksi"]],["reach",["pemirsa","jangkauan","reach","instagram reach","accounts reached","akun yang dijangkau","akun dijangkau"]],["inter",["interaksi","interactions","content interactions","interaksi konten","total interactions"]],["followers",["pengikut","followers","jumlah pengikut","total followers","instagram followers"]],["views",["tayangan","views","impressions","impresi"]]],
+ rep_tt:[["newviewers",["new viewers","penonton baru"]],["viewers",["total viewers","total penonton","viewers","penonton","unique viewers"]],["profile",["profile views","tampilan profil","profile view"]],["views",["video views","tayangan video","views","tayangan","post views"]],["likes",["likes","suka"]],["comments",["comments","komentar"]],["shares",["shares","bagikan","dibagikan"]],["reward",["estimated rewards","perkiraan reward","reward","rewards"]],["net",["difference in followers from previous day","difference in followers","net followers","pengikut neto","selisih pengikut","perubahan pengikut"]],["followers",["followers","jumlah pengikut","pengikut","total followers"]]]
+};
+const REPSKIP=["follows","mengikuti","pengikut baru","new followers","unfollows","berhenti mengikuti"];
+const REPDATE=["date","tanggal","waktu","day","hari","time"],REPEND=["tgl akhir periode","tanggal akhir periode","tanggal akhir","akhir periode","end date","period end"],REPPER=["periode","period","rentang","panjang periode"];
+const REPGEN=["primary","value","values","nilai","jumlah","total","count","angka","utama"],REPLAST=["followers"],REPNOSUM=["reach","engaged","vfol","ifol","viewers","newviewers"];
+const REPHELP={rep_ig:"Bisa berupa file ekspor insight dari Meta Business Suite (data harian, boleh beberapa file sekaligus), file rekap lama dengan kolom Tgl akhir periode (satu baris per laporan), atau tabel ringkasan satu baris. Data harian dijumlahkan menjadi satu laporan, dan pengikut diambil dari nilai terakhir. Pemirsa dan akun yang berinteraksi tidak bisa dijumlahkan dari data harian, jadi isi dari ringkasan periode di aplikasi Instagram.",
+ rep_tt:"Bisa berupa file dari TikTok Studio (Analitik, Unduh data) yang berisi data harian Ikhtisar dan Pengikut, file rekap lama dengan kolom Tgl akhir periode (satu baris per laporan), atau tabel ringkasan satu baris. Data harian dijumlahkan menjadi satu laporan, jumlah pengikut diambil dari nilai terakhir, dan pengikut neto dari jumlah selisih harian. Total penonton dan penonton baru tidak bisa dijumlahkan dari data harian, jadi isi dari ringkasan periode."};
+function repField(k,h){const t=normH(h);let best={s:0};if(!t)return best;
+ const test=(f,syn)=>syn.forEach(sy=>{let s=0;if(t===sy)s=1000+sy.length;else if((" "+t+" ").includes(" "+sy+" "))s=sy.length;if(s>best.s)best={s,f}});
+ REPSYN[k].forEach(([f,syn])=>test(f,syn));test("_skip",REPSKIP);return best}
+const repIsDate=h=>{const t=normH(h);return REPDATE.includes(t)||/^(date|tanggal)\b/.test(t)&&!REPEND.includes(t)};
+const repIsEnd=h=>REPEND.includes(normH(h));
+function repDate(v,fmt){let d=toDate(v,fmt);if(d)return d;const t=String(v==null?"":v).trim().toLowerCase();let m,dd,mo;
+ if(m=t.match(/^(\d{1,2})\s+([a-z]+)\.?$/)){dd=+m[1];mo=MON[m[2].slice(0,3)]}else if(m=t.match(/^([a-z]+)\.?\s+(\d{1,2})$/)){dd=+m[2];mo=MON[m[1].slice(0,3)]}
+ if(!mo||!dd)return "";const y=now.getFullYear();d=ymd(y,mo,dd);return d>today()?ymd(y-1,mo,dd):d}
+function repNum(v,type){
+ if(type==="dec"||type==="usd"){if(typeof v==="number")return v;let t=String(v==null?"":v).replace(/[%$\s]/g,"");if(!t||t==="-")return "";if(/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t))t=t.replace(/\./g,"").replace(",",".");else t=t.replace(",",".");const n=parseFloat(t);return isNaN(n)?"":n}
+ return toNum(v)}
+function repPer(k,v){const P=k==="rep_ig"?PER_IG:PER_TT;if(P.includes(v))return v;const n=parseInt(String(v||""));return P.find(p=>parseInt(p)===n)||"Kustom"}
+function repTable(A,ctx,k){
+ A=A.map(r=>r.map(c=>c==null?"":c));
+ const hi=A.findIndex(r=>{const s=r.filter(c=>typeof c==="string"&&c.trim());return s.length>=2&&s.some(c=>repIsDate(c)||repIsEnd(c)||(repField(k,c).f||"_skip")!=="_skip")});
+ if(hi<0)return null;
+ let title="";for(let i=hi-1;i>=0;i--){const s=A[i].filter(c=>String(c).trim());if(s.length===1){title=String(s[0]).trim();break}}
+ const H=A[hi].map(c=>String(c).trim()),rows=A.slice(hi+1).filter(r=>r.some(c=>c!==""));
+ const dateIdx=H.findIndex(repIsDate),endIdx=H.findIndex(repIsEnd),perIdx=H.findIndex(h=>REPPER.includes(normH(h))),cx=[title,ctx.sheet,ctx.file.replace(/\.[a-z]+$/i,"")].join(" ");
+ const map=[],unused=[];
+ H.forEach((h,i)=>{if(i===dateIdx||i===endIdx||i===perIdx||!h)return;let r=repField(k,h);const gen=!r.f&&REPGEN.includes(normH(h));if(gen)r=repField(k,cx);const nm=gen&&title?title:h;
+  if(r.f&&r.f!=="_skip"&&!map.some(m=>m.f===r.f))map.push({i,f:r.f,h:nm});else unused.push(nm)});
+ const ci=endIdx>=0?endIdx:dateIdx;
+ return {label:ctx.file+(ctx.multi?" ("+ctx.sheet+")":""),title,H,rows,dateIdx,endIdx,perIdx,map,unused,fmt:impDetectFmt(ci>=0?rows.map(r=>r[ci]):[],k==="rep_ig"?"Instagram":"TikTok")};
+}
+async function repRead(files,k){
+ await loadXLSX();const T=[];
+ for(const f of files){let wb;
+  if(/\.(csv|txt)$/i.test(f.name)){let s=(await f.text()).replace(/^﻿/,"");const m=s.match(/^"?sep=(.)"?\r?\n/i),o={type:"string",raw:true};if(m){s=s.slice(m[0].length);o.FS=m[1]}wb=XLSX.read(s,o)}
+  else wb=XLSX.read(await f.arrayBuffer(),{type:"array"});
+  wb.SheetNames.forEach(n=>{const A=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:""}),t=repTable(A,{file:f.name,sheet:n,multi:wb.SheetNames.length>1},k);if(t&&t.map.length)T.push(t)});
+ }
+ if(!T.length)throw new Error("Tidak ada kolom yang dikenali sebagai angka laporan. Periksa judul kolom di file.");
+ return T;
+}
+function repBuild(k){
+ const I=imp,F=E[k].f,ft=f=>(F.find(x=>x[0]===f)||[])[2],out=[],C={vals:{},src:{},skip:[],ranges:[]};
+ I.tables.forEach(T=>{
+  if(T.endIdx>=0){T.rows.forEach(r=>{const end=repDate(r[T.endIdx],T.fmt);if(!end)return;const o={end,per:T.perIdx>=0?repPer(k,r[T.perIdx]):"Kustom",src:T.label};T.map.forEach(m=>{const v=repNum(r[m.i],ft(m.f));if(v!=="")o[m.f]=v});out.push(o)});return}
+  const dated=T.dateIdx>=0?T.rows.map(r=>({d:repDate(r[T.dateIdx],T.fmt),r})).filter(x=>x.d).sort((a,b)=>a.d<b.d?-1:1):[];
+  if(dated.length>=2){
+   C.ranges.push([dated[0].d,dated[dated.length-1].d]);
+   T.map.forEach(m=>{
+    if(REPNOSUM.includes(m.f)){C.skip.push(m.h);return}
+    if(REPLAST.includes(m.f)){let v="";dated.forEach(x=>{const y=repNum(x.r[m.i],ft(m.f));if(y!=="")v=y});if(v!==""){C.vals[m.f]=v;C.src[m.f]=T.label+": "+m.h+" (nilai terakhir)"}return}
+    let s=0,n=0;dated.forEach(x=>{const y=repNum(x.r[m.i],ft(m.f));if(y!==""){s+=+y;n++}});
+    if(n){C.vals[m.f]=Math.round(s*100)/100;C.src[m.f]=T.label+": "+m.h+" (jumlah "+n+" hari)"}});
+  }else{
+   const x=dated[0],r=x?x.r:T.rows[0];if(!r)return;if(x)C.ranges.push([x.d,x.d]);
+   T.map.forEach(m=>{const v=repNum(r[m.i],ft(m.f));if(v!==""){C.vals[m.f]=v;C.src[m.f]=T.label+": "+m.h}});
+  }
+ });
+ if(!Object.keys(C.vals).length)return {comb:null,rows:out};
+ const from=C.ranges.length?C.ranges.map(r=>r[0]).sort()[0]:"",to=C.ranges.length?C.ranges.map(r=>r[1]).sort().pop():"";
+ C.days=from&&to?Math.round((new Date(to)-new Date(from))/864e5)+1:0;C.from=from;C.to=to;
+ C.mixed=new Set(C.ranges.map(r=>r.join("|"))).size>1;
+ C.end=I.end||to||today();C.per=I.per||(C.days>1?repPer(k,C.days+" hari"):"Kustom");
+ return {comb:C,rows:out};
+}
+function repImportView(k){
+ const I=imp,F=E[k].f,lb=f=>(F.find(x=>x[0]===f)||[])[1]||f,P=k==="rep_ig"?PER_IG:PER_TT,res=I.tables?repBuild(k):null;
+ const exist=o=>S[k].some(x=>x.end===o.end&&x.per===o.per),fv=(f,v)=>{const t=(F.find(x=>x[0]===f)||[])[2];return t==="dec"?Number(v).toLocaleString("id-ID",{maximumFractionDigits:1})+"%":t==="usd"?"$"+Number(v).toLocaleString("id-ID",{maximumFractionDigits:2}):t==="int"?(v>0?"+":"")+n0(v):n0(v)};
+ let h=`<div class="card"><div class="row"><h2 class="grow" style="margin:0">Impor ${esc(E[k].label)} dari file</h2><button class="b" id="rx">Kembali</button></div>
+ <p class="note">${REPHELP[k]}</p><div class="form"><label>File (.csv / .xlsx), boleh lebih dari satu<input type="file" id="r_file" accept=".csv,.xlsx,.xls,.txt" multiple></label></div>`;
+ if(I.err)h+=`<p class="note" style="color:#ff8ca5">${esc(I.err)}</p>`;
+ let n=0;
+ if(res){
+  h+=`<h2 style="margin-top:14px">1. Kolom yang terbaca</h2><div class="scroll"><table><tr><th>File / sheet</th><th>Jenis data</th><th>Kolom dipakai</th><th>Tidak dipakai</th></tr>`+I.tables.map(T=>{
+   const jenis=T.endIdx>=0?"Satu baris per laporan ("+T.rows.length+" baris)":T.dateIdx>=0&&T.rows.length>1?"Data harian ("+T.rows.length+" baris)":"Ringkasan";
+   return `<tr><td class="wrap">${esc(T.label)}${T.title?`<br><span class="note">${esc(T.title)}</span>`:""}</td><td>${jenis}</td><td class="wrap">${T.map.map(m=>esc(m.h)+" = "+esc(lb(m.f))).join("<br>")}</td><td class="wrap note">${esc(T.unused.join(", "))}</td></tr>`}).join("")+`</table></div>`;
+  if(res.comb){const C=res.comb;n++;
+   h+=`<h2 style="margin-top:14px">2. Laporan dari data harian / ringkasan</h2>`+(C.days>1?`<p class="note">Data mencakup ${dmy(C.from)} s.d. ${dmy(C.to)} (${C.days} hari).</p>`:"")+(C.mixed?`<p class="note" style="color:#ffc766">Rentang tanggal antarfile berbeda. Pastikan semua file diunduh dengan rentang yang sama.</p>`:"")+
+   `<div class="form"><label>Tgl akhir periode<input type="date" id="r_end" value="${C.end}"></label><label>Periode<select id="r_per">${P.map(p=>`<option ${p===C.per?"selected":""}>${p}</option>`).join("")}</select></label></div>`+
+   `<div class="scroll"><table><tr><th>Kolom laporan</th><th class="r">Nilai</th><th>Sumber</th></tr>`+F.filter(f=>C.vals[f[0]]!==undefined).map(f=>`<tr><td>${esc(f[1])}</td><td class="r">${fv(f[0],C.vals[f[0]])}</td><td class="note wrap">${esc(C.src[f[0]])}</td></tr>`).join("")+`</table></div>`+
+   (C.skip.length?`<p class="note" style="color:#ffc766">Tidak dijumlahkan: ${esc(C.skip.join(", "))}. Isi manual dari ringkasan periode lewat tombol Ubah setelah disimpan.</p>`:"")+
+   (exist({end:C.end,per:C.per})?`<p class="note">Sudah ada laporan ${esc(C.per)} s.d. ${dmy(C.end)}. Kolom yang terisi akan memperbarui laporan itu.</p>`:"");}
+  if(res.rows.length){n+=res.rows.length;const cols=LAPKEY[k].map(x=>x[0]);
+   h+=`<h2 style="margin-top:14px">${res.comb?"3":"2"}. Laporan dari file rekap (${res.rows.length})</h2><div class="scroll"><table><tr><th>Periode</th><th>Tgl akhir</th>${cols.map(c=>`<th class="r">${esc(lb(c))}</th>`).join("")}<th></th></tr>`+res.rows.slice(0,12).map(o=>`<tr><td>${esc(o.per)}</td><td>${dmy(o.end)}</td>${cols.map(c=>`<td class="r">${o[c]===undefined?"":fv(c,o[c])}</td>`).join("")}<td class="note">${exist(o)?"memperbarui":"baru"}</td></tr>`).join("")+`</table></div>`+(res.rows.length>12?`<p class="note">…dan ${res.rows.length-12} laporan lainnya.</p>`:"");}
+  h+=`<div class="row" style="margin-top:12px"><button class="b p" id="r_go" ${n?"":"disabled"}>Simpan ${n} laporan</button></div>`;
+ }
+ $("#main").innerHTML=h+`</div>`;
+ $("#rx").onclick=()=>{imp=null;render()};
+ $("#r_file").onchange=async e=>{const fs=[...e.target.files];if(!fs.length)return;I.err="";I.end="";I.per="";
+  try{I.tables=await repRead(fs,k)}catch(x){console.error(x);I.tables=null;I.err="Gagal membaca file: "+(x.message||x)}render()};
+ const re=$("#r_end");if(re){const ap=()=>{const v=re.value;if(v&&+v.slice(0,4)<1900)return;if(I.end===v)return;I.end=v;render()};re.onchange=ap;re.onblur=ap}
+ if($("#r_per"))$("#r_per").onchange=e=>{I.per=e.target.value;render()};
+ if($("#r_go"))$("#r_go").onclick=()=>{
+  const R=repBuild(k),before=JSON.parse(JSON.stringify(S[k])),nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);let add=0,upd=0;
+  const put=o=>{const vals={};F.forEach(([f])=>{if(f!=="end"&&f!=="per"&&o[f]!==undefined&&o[f]!=="")vals[f]=o[f]});const ex=S[k].find(x=>x.end===o.end&&x.per===o.per);if(ex){Object.assign(ex,vals);upd++}else{S[k].push(Object.assign({id:nid(),end:o.end,per:o.per},vals));add++}};
+  if(R.comb)put(Object.assign({},R.comb.vals,{end:R.comb.end,per:R.comb.per}));R.rows.forEach(put);
+  UNDO.push({type:"snap",k,before});persist(k);imp=null;flashMsg=`Impor laporan selesai: ${add} laporan baru, ${upd} diperbarui. Tekan Ctrl+Z untuk membatalkan.`;render();
+ };
+}
 /* ---------- kalkulator hitung mundur followers ---------- */
 let FC=null;
 function fcMonths(){
@@ -661,6 +768,7 @@ function undo(){
  else if(u.type==="delmany"){u.ids.forEach(id=>{const t=S.trash.find(x=>x.k===u.k&&x.row.id===id);if(t)restoreTrash(t.tid,true)});toast(u.ids.length+" data dikembalikan.")}
  else if(u.type==="del"){const t=S.trash.find(x=>x.k===u.k&&x.row.id===u.id);if(t){restoreTrash(t.tid,true);toast("Penghapusan dibatalkan.")}}
  else if(u.type==="edit"){const i=S[u.k].findIndex(x=>x.id===u.before.id);if(i>=0){S[u.k][i]=u.before;persist(u.k);toast("Perubahan dibatalkan.")}}
+ else if(u.type==="snap"){S[u.k]=u.before;persist(u.k);toast("Impor laporan dibatalkan.")}
  else if(u.type==="add"){const r=S[u.k].find(x=>x.id===u.id);if(r){S[u.k]=S[u.k].filter(x=>x.id!==u.id);persist(u.k);toast("Data yang baru ditambahkan dibatalkan.")}}
  render();
 }
@@ -784,16 +892,18 @@ function settings(){
  <label>Target penambahan followers per platform (sejak mulai pencatatan)<input id="s_tf" type="number" min="0" value="${s.tf}"></label>${PIL.map((p,i)=>`<label>Target pilar ${esc(p[0])} (%)<input id="s_pt${i}" type="number" min="0" max="100" value="${ptg(p)}"></label>`).join("")}<p class="note" style="grid-column:1/-1">Target porsi pilar sebaiknya berjumlah 100%.</p></div>
  <div class="row" style="margin-top:12px"><button class="b p" id="ss">Simpan</button></div>
  <p class="note">Target dihitung dari target per hari dikali jumlah hari sejak tanggal mulai pencatatan sampai hari ini. Target followers adalah target penambahan followers baru per platform sejak tanggal mulai pencatatan, dan hanya dihitung untuk platform yang sudah punya data. Konten dihitung ditayangkan jika status Tayang dan tanggal tayang terisi.</p></div>
+<div class="card"><h2>Platform aktif</h2><p class="note">Platform yang dicentang tampil di pilihan platform, filter, grafik, dan Audience. Facebook tidak disediakan karena kontennya mirroring dari Instagram. Data lama tetap tersimpan meskipun platformnya dinonaktifkan.</p><div class="row" style="gap:18px;flex-wrap:wrap">${PL_ALL.map(p=>`<label style="display:flex;align-items:center;gap:6px;flex-direction:row"><input type="checkbox" data-plt="${p}" style="width:18px;height:18px" ${PL.includes(p)?"checked":""}> ${p}</label>`).join("")}</div></div>
 ${trashCard()}
  <div class="card"><h2>Cadangan data</h2><p class="note">Ekspor berkala sebagai cadangan, atau pulihkan dari file cadangan sebelumnya.</p>
  <div class="row"><button class="b" id="ex">Ekspor cadangan (JSON)</button><input type="file" id="im" accept=".json"></div><div class="note" id="bk"></div></div>`;
  bindTrash();
  $("#ss").onclick=()=>{["year","tp","tpub","tf"].forEach(x=>s[x]=+$("#s_"+x).value||0);s.start=$("#s_start").value||"";s.pt={};PIL.forEach((p,i)=>{s.pt[p[0]]=+$("#s_pt"+i).value||0});persist("settings");cal.y=s.year;render()};
+ document.querySelectorAll("[data-plt]").forEach(c=>c.onchange=()=>{const a=[...document.querySelectorAll("[data-plt]")].filter(x=>x.checked).map(x=>x.dataset.plt);if(!a.length){c.checked=true;return}s.platforms=a;applyPL();persist("settings");render()});
  $("#ex").onclick=()=>{
   const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download="cadangan-sosmed-"+today()+".json";a.click();URL.revokeObjectURL(url);$("#bk").textContent="Cadangan berhasil diunduh.";
  };
- $("#im").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const v=JSON.parse(r.result);DATA_KEYS.forEach(k=>{if(v[k]){S[k]=v[k];persist(k)}});$("#bk").textContent="Data berhasil dipulihkan."}catch(x){$("#bk").textContent="File cadangan tidak valid."}};r.readAsText(f)};
+ $("#im").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const v=JSON.parse(r.result);DATA_KEYS.forEach(k=>{if(v[k]){S[k]=v[k];persist(k)}});applyPL();$("#bk").textContent="Data berhasil dipulihkan."}catch(x){$("#bk").textContent="File cadangan tidak valid."}};r.readAsText(f)};
 }
 init();
 </script>
